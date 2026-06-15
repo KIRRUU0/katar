@@ -15,29 +15,26 @@ import MediaPage from './pages/MediaPage'
 
 /**
  * PageTransition — Animates page entrance on route change (fade-in + slide-up)
+ * Uses native CSS transitions for robust performance and React 19 compatibility.
  */
 function PageTransition({ children }) {
   const location = useLocation()
-  const containerRef = useRef(null)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (!containerRef.current) return
-
-    // Set initial transition styles
-    containerRef.current.style.opacity = '0'
-    containerRef.current.style.transform = 'translateY(12px)'
-
-    // Animate using Anime.js
-    animate(containerRef.current, {
-      opacity: [0, 1],
-      translateY: [12, 0],
-      duration: 400,
-      ease: 'outCubic',
+    setVisible(false)
+    const raf = requestAnimationFrame(() => {
+      setVisible(true)
     })
+    return () => cancelAnimationFrame(raf)
   }, [location.pathname])
 
   return (
-    <div ref={containerRef} className="will-change-[transform,opacity]">
+    <div
+      className={`transition-all duration-400 ease-out will-change-[transform,opacity] ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+      }`}
+    >
       {children}
     </div>
   )

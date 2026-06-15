@@ -110,7 +110,7 @@ export default function HomePage() {
   return (
     <div ref={root}>
       {/* ─── 1. HERO BANNER ──────────────────────────────────────── */}
-      <section className="fixed top-0 left-0 w-full h-[80vh] md:h-[90vh] overflow-hidden bg-merah-950 z-0">
+      <section className="fixed top-0 left-0 w-full h-screen overflow-hidden bg-merah-950 z-0">
         {/* GIF background */}
         <img
           src={welcomeVideo}
@@ -180,7 +180,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── 2. SCROLLABLE CONTENT ───────────────────────────────── */}
-      <div className="relative mt-[calc(80vh-2rem)] md:mt-[calc(90vh-2rem)] z-10 bg-white shadow-[0_-20px_40px_rgba(15,23,42,0.08)] rounded-t-[2rem] overflow-hidden border-t border-abu-100">
+      <div className="relative mt-[calc(100vh-2rem)] z-10 bg-white shadow-[0_-20px_40px_rgba(15,23,42,0.08)] rounded-t-[2rem] overflow-hidden border-t border-abu-100">
 
         {/* ── Kutipan Soekarno ──────────────────────────────────── */}
         <section className="max-w-5xl mx-auto px-4 pt-8 pb-4 md:pt-14 md:pb-8 text-center">
