@@ -14,8 +14,9 @@ import OrgPage from './pages/OrgPage'
 import MediaPage from './pages/MediaPage'
 
 /**
- * PageTransition — Animates page entrance on route change (fade-in + slide-up)
+ * PageTransition — Animates page entrance on route change (fade-in)
  * Uses native CSS transitions for robust performance and React 19 compatibility.
+ * Avoids using 'transform' to preserve the 'fixed' viewport context of the hero banner.
  */
 function PageTransition({ children }) {
   const location = useLocation()
@@ -31,8 +32,8 @@ function PageTransition({ children }) {
 
   return (
     <div
-      className={`transition-all duration-400 ease-out will-change-[transform,opacity] ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
+      className={`transition-opacity duration-350 ease-out ${
+        visible ? 'opacity-100' : 'opacity-0'
       }`}
     >
       {children}
