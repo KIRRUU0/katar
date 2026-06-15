@@ -1,0 +1,175 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { animate } from 'animejs'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { Icon } from '@iconify/react'
+
+const parseImages = (imageUrl) => {
+  if (!imageUrl) return []
+  if (imageUrl.startsWith('[') && imageUrl.endsWith(']')) {
+    try {
+      return JSON.parse(imageUrl)
+    } catch (e) {
+      console.error('Failed to parse image_url JSON:', e)
+    }
+  }
+  if (imageUrl.includes(',')) {
+    return imageUrl.split(',').map(u => u.trim()).filter(Boolean)
+  }
+  return [imageUrl.trim()].filter(Boolean)
+}
+
+const DEMO_PHOTOS = [
+  {
+    id: 'm1',
+    title: 'Gotong Royong Lapangan Gang 3',
+    year: 2025,
+    description: 'Warga bahu-membahu membersihkan dan menyiapkan area panggung kemerdekaan.',
+    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
+  },
+  {
+    id: 'm2',
+    title: 'Keseruan Balap Karung Anak-Anak',
+    year: 2025,
+    description: 'Tawa ceria anak-anak RT 03 beradu cepat di garis finish balap karung.',
+    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
+  },
+  {
+    id: 'm3',
+    title: 'Latihan Futsal Bersama',
+    year: 2025,
+    description: 'Sesi latihan pemuda karang taruna mempererat keakraban antar gang.',
+    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
+  },
+  {
+    id: 'm4',
+    title: 'Pemasangan Bendera Lingkungan',
+    year: 2024,
+    description: 'Kerja sama memasang umbul-umbul merah putih di sepanjang gang jalan utama.',
+    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=800',
+  },
+]
+
+export default function MediaPreview() {
+  const [photos, setPhotos] = useState([])
+  const sectionRef = useRef(null)
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    async function loadPhotos() {
+      let supabasePhotos = []
+      if (isSupabaseConfigured()) {
+        try {
+          const { data, error } = await supabase
+            .from('media')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10)
+          if (!error && data?.length) {
+            supabasePhotos = data
+          }
+        } catch (err) {
+          console.warn('MediaPreview: Supabase query failed', err)
+        }
+      }
+
+      const localData = localStorage.getItem('katar_media_photos')
+      let localPhotos = []
+      if (localData) {
+        try {
+          localPhotos = JSON.parse(localData)
+        } catch {
+          localPhotos = []
+        }
+      }
+
+      const combined = [...localPhotos, ...supabasePhotos]
+      if (combined.length > 0) {
+        setPhotos(combined.slice(0, 4))
+      } else {
+        setPhotos(DEMO_PHOTOS)
+      }
+    }
+
+    loadPhotos()
+  }, [])
+
+  // Stagger entrance animation on intersection
+  useEffect(() => {
+    if (!sectionRef.current || !photos.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true
+
+          const cards = sectionRef.current.querySelectorAll('.media-card')
+          if (cards.length) {
+            animate(cards, {
+              opacity: [0, 1],
+              scale: [0.95, 1],
+              translateY: ['1.5rem', '0rem'],
+              delay: (_el, i) => i * 100,
+              duration: 600,
+              ease: 'outBack',
+            })
+          }
+        }
+      },
+      { threshold: 0.15 }
+    )
+
+    observer.observe(sectionRef.current)
+    return () => observer.disconnect()
+  }, [photos])
+
+  if (!photos.length) return null
+
+  return (
+    <section ref={sectionRef} className="py-10 md:py-14 border-t border-abu-200">
+      {/* Section Header */}
+      <div className="flex items-center justify-between mb-6 px-4 md:px-0">
+        <h2 className="text-xl md:text-2xl font-bold font-heading text-abu-900 flex items-center gap-2">
+          <Icon icon="solar:camera-bold-duotone" className="w-6 h-6 text-abu-900" />
+          Galeri Foto Kegiatan
+        </h2>
+
+        <Link
+          to="/media"
+          className="text-sm font-bold text-merah-600 hover:text-merah-700 flex items-center gap-1.5 focus-ring px-3 py-1.5 rounded-lg border border-merah-200 bg-white hover:bg-merah-50 transition-all min-h-[36px]"
+        >
+          <span>Selengkapnya</span>
+          <Icon icon="solar:arrow-right-bold" className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Grid of photos */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-0">
+        {photos.map((item) => (
+          <Link
+            key={item.id}
+            to="/media"
+            className="media-card group relative block h-48 md:h-60 overflow-hidden rounded-2xl shadow-sm hover:shadow-md cursor-pointer transform opacity-0"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <img
+              src={parseImages(item.image_url)[0]}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+              loading="lazy"
+            />
+            {/* Dark Overlay with Title */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity">
+              <span className="text-[10px] uppercase font-extrabold text-merah-400 tracking-wider mb-1">
+                Tahun {item.year}
+              </span>
+              <h3 className="text-xs md:text-sm font-heading font-bold text-white line-clamp-2 leading-tight">
+                {item.title}
+              </h3>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
