@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { Icon } from '@iconify/react'
+import { animate } from 'animejs'
 import Navbar from './components/Navbar'
 import LiveTicker from './components/LiveTicker'
 import HomePage from './pages/HomePage'
@@ -11,6 +12,37 @@ import NewsDetailPage from './pages/NewsDetailPage'
 import NewsListPage from './pages/NewsListPage'
 import OrgPage from './pages/OrgPage'
 import MediaPage from './pages/MediaPage'
+
+/**
+ * PageTransition — Animates page entrance on route change (fade-in + slide-up)
+ */
+function PageTransition({ children }) {
+  const location = useLocation()
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    // Set initial transition styles
+    containerRef.current.style.opacity = '0'
+    containerRef.current.style.transform = 'translateY(12px)'
+
+    // Animate using Anime.js
+    animate(containerRef.current, {
+      opacity: [0, 1],
+      translateY: [12, 0],
+      duration: 400,
+      ease: 'outCubic',
+    })
+  }, [location.pathname])
+
+  return (
+    <div ref={containerRef} className="will-change-[transform,opacity]">
+      {children}
+    </div>
+  )
+}
+
 
 /**
  * App — Root component with routing and auth context.
@@ -62,15 +94,17 @@ export default function App() {
 
         {/* Page content with top padding for fixed navbar */}
         <main className={isHome ? "" : "pt-20"}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/league" element={<LeaguePage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/news" element={<NewsListPage />} />
-            <Route path="/news/:id" element={<NewsDetailPage />} />
-            <Route path="/org" element={<OrgPage />} />
-            <Route path="/media" element={<MediaPage />} />
-          </Routes>
+          <PageTransition>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/league" element={<LeaguePage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/news" element={<NewsListPage />} />
+              <Route path="/news/:id" element={<NewsDetailPage />} />
+              <Route path="/org" element={<OrgPage />} />
+              <Route path="/media" element={<MediaPage />} />
+            </Routes>
+          </PageTransition>
         </main>
 
         {/* Footer */}
