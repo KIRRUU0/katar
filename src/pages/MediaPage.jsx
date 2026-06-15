@@ -461,7 +461,7 @@ export default function MediaPage() {
                   Tahun {activePhoto.year}
                 </span>
                 <h4 className="font-heading text-lg font-bold">{activePhoto.title}</h4>
-                {activePhoto.description && (
+                {lightboxIndex === 0 && activePhoto.description && (
                   <p className="text-sm text-abu-300 mt-1.5 max-w-2xl mx-auto leading-relaxed">{activePhoto.description}</p>
                 )}
               </div>
