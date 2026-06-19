@@ -89,8 +89,6 @@ export default function MediaPreview() {
     return () => observer.disconnect()
   }, [photos])
 
-  if (!photos.length) return null
-
   return (
     <section ref={sectionRef} className="py-10 md:py-14 border-t border-abu-200">
       {/* Section Header */}
@@ -109,33 +107,38 @@ export default function MediaPreview() {
         </Link>
       </div>
 
-      {/* Grid of photos */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-0">
-        {photos.map((item) => (
-          <Link
-            key={item.id}
-            to="/media"
-            className="media-card group relative block h-48 md:h-60 overflow-hidden rounded-2xl shadow-sm hover:shadow-md cursor-pointer transform opacity-0"
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <img
-              src={parseImages(item.image_url)[0]}
-              alt={item.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
-              loading="lazy"
-            />
-            {/* Dark Overlay with Title */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity">
-              <span className="text-[10px] uppercase font-extrabold text-merah-400 tracking-wider mb-1">
-                Tahun {item.year}
-              </span>
-              <h3 className="text-xs md:text-sm font-heading font-bold text-white line-clamp-2 leading-tight">
-                {item.title}
-              </h3>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {photos.length === 0 ? (
+        <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
+          tidak ada media atau data
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-0">
+          {photos.map((item) => (
+            <Link
+              key={item.id}
+              to="/media"
+              className="media-card group relative block h-48 md:h-60 overflow-hidden rounded-2xl shadow-sm hover:shadow-md cursor-pointer transform opacity-0"
+              style={{ willChange: 'transform, opacity' }}
+            >
+              <img
+                src={parseImages(item.image_url)[0]}
+                alt={item.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+                loading="lazy"
+              />
+              {/* Dark Overlay with Title */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] uppercase font-extrabold text-merah-400 tracking-wider mb-1">
+                  Tahun {item.year}
+                </span>
+                <h3 className="text-xs md:text-sm font-heading font-bold text-white line-clamp-2 leading-tight">
+                  {item.title}
+                </h3>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

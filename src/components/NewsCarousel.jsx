@@ -120,8 +120,6 @@ export default function NewsCarousel() {
     return () => observer.disconnect()
   }, [news])
 
-  if (!news.length) return null
-
   return (
     <section ref={sectionRef} className="py-10 md:py-14">
       {/* ── Section header ──────────────────────────────── */}
@@ -140,47 +138,53 @@ export default function NewsCarousel() {
         </Link>
       </div>
 
-      {/* ── Grid card row ─────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 md:px-0">
-        {news.map((item) => (
-          <Link
-            key={item.id}
-            to={`/news/${item.id}`}
-            className="news-card card block overflow-hidden opacity-0 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer"
-          >
-            {/* Image */}
-            <div className="relative h-48 overflow-hidden">
-              <img
-                src={parseImages(item.image_url)[0]}
-                alt={item.title}
-                className="w-full h-full object-cover rounded-t-2xl"
-                loading="lazy"
-              />
-              {/* Subtle gradient overlay for readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-2xl" />
-            </div>
+      {news.length === 0 ? (
+        <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
+          tidak ada media atau data
+        </div>
+      ) : (
+        /* ── Grid card row ─────────────────────────── */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 md:px-0">
+          {news.map((item) => (
+            <Link
+              key={item.id}
+              to={`/news/${item.id}`}
+              className="news-card card block overflow-hidden opacity-0 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer"
+            >
+              {/* Image */}
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={parseImages(item.image_url)[0]}
+                  alt={item.title}
+                  className="w-full h-full object-cover rounded-t-2xl"
+                  loading="lazy"
+                />
+                {/* Subtle gradient overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-2xl" />
+              </div>
 
-            {/* Text content */}
-            <div className="p-5">
-              <h3 className="font-heading text-lg font-bold text-abu-900 leading-snug mb-2 line-clamp-2">
-                {item.title}
-              </h3>
-              <p className="text-sm text-abu-500 leading-relaxed mb-4 line-clamp-2">
-                {item.description}
-              </p>
-              {item.created_at && (
-                <time
-                  dateTime={item.created_at}
-                  className="text-xs text-abu-400 font-semibold flex items-center gap-1"
-                >
-                  <Icon icon="solar:calendar-bold" className="w-3.5 h-3.5" />
-                  {formatDate(item.created_at)}
-                </time>
-              )}
-            </div>
-          </Link>
-        ))}
-      </div>
+              {/* Text content */}
+              <div className="p-5">
+                <h3 className="font-heading text-lg font-bold text-abu-900 leading-snug mb-2 line-clamp-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-abu-500 leading-relaxed mb-4 line-clamp-2">
+                  {item.description}
+                </p>
+                {item.created_at && (
+                  <time
+                    dateTime={item.created_at}
+                    className="text-xs text-abu-400 font-semibold flex items-center gap-1"
+                  >
+                    <Icon icon="solar:calendar-bold" className="w-3.5 h-3.5" />
+                    {formatDate(item.created_at)}
+                  </time>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
