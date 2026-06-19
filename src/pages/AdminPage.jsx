@@ -1701,6 +1701,31 @@ function FormKelolaBerita() {
               {uploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
             </div>
 
+            <div className="flex gap-2 max-w-xl">
+              <input
+                type="url"
+                id="news-banner-url-input"
+                className="form-input focus-ring text-sm flex-grow"
+                placeholder="Atau tempel URL gambar langsung (bisa Google Drive)"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const inputEl = document.getElementById('news-banner-url-input')
+                  const urlVal = inputEl.value.trim()
+                  if (urlVal) {
+                    const currentUrls = parseImages(form.imageUrl)
+                    const combined = [...currentUrls, urlVal]
+                    updateField('imageUrl', JSON.stringify(combined))
+                    inputEl.value = ''
+                  }
+                }}
+                className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
+              >
+                Tambah URL
+              </button>
+            </div>
+
             {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
                 {parseImages(form.imageUrl).map((url, idx) => (
@@ -1851,6 +1876,31 @@ function FormKelolaBerita() {
                       <span>Pilih Gambar Baru</span>
                     </label>
                     {editUploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
+                  </div>
+
+                  <div className="flex gap-2 max-w-xl">
+                    <input
+                      type="url"
+                      id="edit-news-banner-url-input"
+                      className="form-input focus-ring text-sm flex-grow"
+                      placeholder="Atau tempel URL gambar langsung (bisa Google Drive)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const inputEl = document.getElementById('edit-news-banner-url-input')
+                        const urlVal = inputEl.value.trim()
+                        if (urlVal) {
+                          const currentUrls = parseImages(editForm.imageUrl)
+                          const combined = [...currentUrls, urlVal]
+                          setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                          inputEl.value = ''
+                        }
+                      }}
+                      className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
+                    >
+                      Tambah URL
+                    </button>
                   </div>
                   {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -2186,6 +2236,31 @@ function FormKelolaMedia({ onMediaAdded }) {
               {uploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
             </div>
 
+            <div className="flex gap-2 max-w-xl">
+              <input
+                type="url"
+                id="media-photo-url-input"
+                className="form-input focus-ring text-sm flex-grow"
+                placeholder="Atau tempel URL foto langsung (bisa Google Drive)"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const inputEl = document.getElementById('media-photo-url-input')
+                  const urlVal = inputEl.value.trim()
+                  if (urlVal) {
+                    const currentUrls = parseImages(form.imageUrl)
+                    const combined = [...currentUrls, urlVal]
+                    updateField('imageUrl', JSON.stringify(combined))
+                    inputEl.value = ''
+                  }
+                }}
+                className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
+              >
+                Tambah URL
+              </button>
+            </div>
+
             {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
                 {parseImages(form.imageUrl).map((url, idx) => (
@@ -2351,6 +2426,31 @@ function FormKelolaMedia({ onMediaAdded }) {
                       <span>Unggah Foto Baru</span>
                     </label>
                     {editUploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
+                  </div>
+
+                  <div className="flex gap-2 max-w-xl">
+                    <input
+                      type="url"
+                      id="edit-media-photo-url-input"
+                      className="form-input focus-ring text-sm flex-grow"
+                      placeholder="Atau tempel URL foto langsung (bisa Google Drive)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const inputEl = document.getElementById('edit-media-photo-url-input')
+                        const urlVal = inputEl.value.trim()
+                        if (urlVal) {
+                          const currentUrls = parseImages(editForm.imageUrl)
+                          const combined = [...currentUrls, urlVal]
+                          setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                          inputEl.value = ''
+                        }
+                      }}
+                      className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
+                    >
+                      Tambah URL
+                    </button>
                   </div>
                   {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
