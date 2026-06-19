@@ -33,26 +33,29 @@ export default function HomePage() {
   useEffect(() => {
     scope.current = createScope({ root: root.current }).add(() => {
       animate('.hero-title', {
-        translateY: [40, 0],
+        translateY: [20, 0],
         opacity: [0, 1],
-        duration: 800,
+        filter: ['blur(6px)', 'blur(0px)'],
+        duration: 1000,
         ease: 'outExpo',
       })
 
       animate('.hero-welcome', {
+        translateY: [15, 0],
         opacity: [0, 1],
-        translateY: [20, 0],
-        duration: 600,
-        delay: 300,
+        filter: ['blur(4px)', 'blur(0px)'],
+        duration: 800,
+        delay: 350,
         ease: 'outExpo',
       })
 
       animate('.hero-buttons', {
-        scale: [0.9, 1],
+        translateY: [10, 0],
         opacity: [0, 1],
-        duration: 600,
-        delay: 500,
-        ease: 'outBack(1.5)',
+        filter: ['blur(3px)', 'blur(0px)'],
+        duration: 800,
+        delay: 600,
+        ease: 'outExpo',
       })
     })
 
@@ -66,6 +69,7 @@ export default function HomePage() {
       els.forEach(el => {
         el.style.opacity = '1'
         el.style.transform = 'none'
+        el.style.filter = 'none'
       })
     }, 1500)
     return () => clearTimeout(timer)
@@ -136,6 +140,7 @@ export default function HomePage() {
             className="hero-title font-heading text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 md:mb-5 uppercase tracking-wide"
             style={{ 
               opacity: 0, 
+              filter: 'blur(6px)',
               color: '#FFFFFF', 
               textShadow: '0 4px 20px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.6)' 
             }}
@@ -149,6 +154,7 @@ export default function HomePage() {
             className="hero-welcome text-sm md:text-lg lg:text-xl font-normal mb-6 md:mb-8 max-w-3xl leading-relaxed text-white/85"
             style={{ 
               opacity: 0, 
+              filter: 'blur(4px)',
               textShadow: '0 2px 10px rgba(0,0,0,0.7)' 
             }}
           >
@@ -158,7 +164,7 @@ export default function HomePage() {
           </p>
 
           {/* CTA Buttons — Berita & Organisasi */}
-          <div className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0" style={{ opacity: 0 }}>
+          <div className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0" style={{ opacity: 0, filter: 'blur(3px)' }}>
             <Link
               to="/news"
               className="group relative overflow-hidden rounded-xl px-4 py-2.5 sm:px-8 sm:py-3 font-bold text-merah-700 flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-xl hover:scale-105 text-sm sm:text-base flex-1 sm:flex-none max-w-[150px] sm:max-w-none"
