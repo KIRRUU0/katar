@@ -1737,11 +1737,30 @@ function FormKelolaBerita() {
                         const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
                         updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
                       }}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
                       title="Hapus"
                     >
                       ✕
                     </button>
+                    {idx === 0 ? (
+                      <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                        Utama (Thumbnail)
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = parseImages(form.imageUrl)
+                          const selected = current[idx]
+                          const remaining = current.filter((_, i) => i !== idx)
+                          const combined = [selected, ...remaining]
+                          updateField('imageUrl', JSON.stringify(combined))
+                        }}
+                        className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                      >
+                        Jadikan Utama
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1913,11 +1932,30 @@ function FormKelolaBerita() {
                               const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
                               setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
                             }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
                             title="Hapus"
                           >
                             ✕
                           </button>
+                          {idx === 0 ? (
+                            <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                              Utama (Thumbnail)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = parseImages(editForm.imageUrl)
+                                const selected = current[idx]
+                                const remaining = current.filter((_, i) => i !== idx)
+                                const combined = [selected, ...remaining]
+                                setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                              }}
+                              className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                            >
+                              Jadikan Utama
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2272,11 +2310,30 @@ function FormKelolaMedia({ onMediaAdded }) {
                         const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
                         updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
                       }}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
                       title="Hapus"
                     >
                       ✕
                     </button>
+                    {idx === 0 ? (
+                      <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                        Utama (Thumbnail)
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = parseImages(form.imageUrl)
+                          const selected = current[idx]
+                          const remaining = current.filter((_, i) => i !== idx)
+                          const combined = [selected, ...remaining]
+                          updateField('imageUrl', JSON.stringify(combined))
+                        }}
+                        className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                      >
+                        Jadikan Utama
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2463,11 +2520,30 @@ function FormKelolaMedia({ onMediaAdded }) {
                               const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
                               setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
                             }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
                             title="Hapus"
                           >
                             ✕
                           </button>
+                          {idx === 0 ? (
+                            <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                              Utama (Thumbnail)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const current = parseImages(editForm.imageUrl)
+                                const selected = current[idx]
+                                const remaining = current.filter((_, i) => i !== idx)
+                                const combined = [selected, ...remaining]
+                                setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                              }}
+                              className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                            >
+                              Jadikan Utama
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
