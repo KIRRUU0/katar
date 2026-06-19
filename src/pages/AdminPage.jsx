@@ -1680,7 +1680,41 @@ function FormKelolaBerita() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Unggah Banner / Foto Kegiatan (Bisa lebih dari 1)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
+          <input
+            type="url"
+            required
+            className="form-input focus-ring text-sm"
+            placeholder="Tempel URL gambar utama / banner kegiatan di sini"
+            value={parseImages(form.imageUrl)[0] || ''}
+            onChange={(e) => {
+              const val = e.target.value.trim()
+              const current = parseImages(form.imageUrl)
+              const remaining = current.slice(1)
+              const combined = val ? [val, ...remaining] : remaining
+              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
+          <textarea
+            className="form-input focus-ring text-sm min-h-[60px] py-2"
+            placeholder="Tempel URL gambar galeri tambahan di sini, pisahkan dengan koma"
+            value={parseImages(form.imageUrl).slice(1).join(', ')}
+            onChange={(e) => {
+              const val = e.target.value
+              const mainUrl = parseImages(form.imageUrl)[0] || ''
+              const others = val.split(',').map(u => u.trim()).filter(Boolean)
+              const combined = mainUrl ? [mainUrl, ...others] : others
+              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Atau Unggah dari Perangkat (Bisa lebih dari 1)</label>
           <div className="space-y-3">
             <input
               type="file"
@@ -1700,73 +1734,48 @@ function FormKelolaBerita() {
               </label>
               {uploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
             </div>
-
-            <div className="flex gap-2 max-w-xl">
-              <input
-                type="url"
-                id="news-banner-url-input"
-                className="form-input focus-ring text-sm flex-grow"
-                placeholder="Atau tempel URL gambar langsung (bisa Google Drive)"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const inputEl = document.getElementById('news-banner-url-input')
-                  const urlVal = inputEl.value.trim()
-                  if (urlVal) {
-                    const currentUrls = parseImages(form.imageUrl)
-                    const combined = [...currentUrls, urlVal]
-                    updateField('imageUrl', JSON.stringify(combined))
-                    inputEl.value = ''
-                  }
-                }}
-                className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
-              >
-                Tambah URL
-              </button>
-            </div>
-
-            {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                {parseImages(form.imageUrl).map((url, idx) => (
-                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                    <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                        updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                      }}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                      title="Hapus"
-                    >
-                      ✕
-                    </button>
-                    {idx === 0 ? (
-                      <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                        Utama (Thumbnail)
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const current = parseImages(form.imageUrl)
-                          const selected = current[idx]
-                          const remaining = current.filter((_, i) => i !== idx)
-                          const combined = [selected, ...remaining]
-                          updateField('imageUrl', JSON.stringify(combined))
-                        }}
-                        className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                      >
-                        Jadikan Utama
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
+
+        {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
+            {parseImages(form.imageUrl).map((url, idx) => (
+              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                  }}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                  title="Hapus"
+                >
+                  ✕
+                </button>
+                {idx === 0 ? (
+                  <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                    Utama (Thumbnail)
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = parseImages(form.imageUrl)
+                      const selected = current[idx]
+                      const remaining = current.filter((_, i) => i !== idx)
+                      const combined = [selected, ...remaining]
+                      updateField('imageUrl', JSON.stringify(combined))
+                    }}
+                    className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                  >
+                    Jadikan Utama
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi Kegiatan</label>
@@ -1876,7 +1885,41 @@ function FormKelolaBerita() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Ubah / Tambah Foto Kegiatan (Bisa lebih dari 1)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
+                <input
+                  type="url"
+                  required
+                  className="form-input focus-ring text-sm"
+                  placeholder="Tempel URL gambar utama / banner kegiatan di sini"
+                  value={parseImages(editForm.imageUrl)[0] || ''}
+                  onChange={(e) => {
+                    const val = e.target.value.trim()
+                    const current = parseImages(editForm.imageUrl)
+                    const remaining = current.slice(1)
+                    const combined = val ? [val, ...remaining] : remaining
+                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
+                <textarea
+                  className="form-input focus-ring text-sm min-h-[60px] py-2"
+                  placeholder="Tempel URL gambar galeri tambahan di sini, pisahkan dengan koma"
+                  value={parseImages(editForm.imageUrl).slice(1).join(', ')}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    const mainUrl = parseImages(editForm.imageUrl)[0] || ''
+                    const others = val.split(',').map(u => u.trim()).filter(Boolean)
+                    const combined = mainUrl ? [mainUrl, ...others] : others
+                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Atau Unggah dari Perangkat (Bisa lebih dari 1)</label>
                 <div className="space-y-3">
                   <input
                     type="file"
@@ -1896,72 +1939,48 @@ function FormKelolaBerita() {
                     </label>
                     {editUploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
                   </div>
-
-                  <div className="flex gap-2 max-w-xl">
-                    <input
-                      type="url"
-                      id="edit-news-banner-url-input"
-                      className="form-input focus-ring text-sm flex-grow"
-                      placeholder="Atau tempel URL gambar langsung (bisa Google Drive)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const inputEl = document.getElementById('edit-news-banner-url-input')
-                        const urlVal = inputEl.value.trim()
-                        if (urlVal) {
-                          const currentUrls = parseImages(editForm.imageUrl)
-                          const combined = [...currentUrls, urlVal]
-                          setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
-                          inputEl.value = ''
-                        }
-                      }}
-                      className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
-                    >
-                      Tambah URL
-                    </button>
-                  </div>
-                  {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                      {parseImages(editForm.imageUrl).map((url, idx) => (
-                        <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                          <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
-                              setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
-                            }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                            title="Hapus"
-                          >
-                            ✕
-                          </button>
-                          {idx === 0 ? (
-                            <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                              Utama (Thumbnail)
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const current = parseImages(editForm.imageUrl)
-                                const selected = current[idx]
-                                const remaining = current.filter((_, i) => i !== idx)
-                                const combined = [selected, ...remaining]
-                                setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
-                              }}
-                              className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                            >
-                              Jadikan Utama
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                  {parseImages(editForm.imageUrl).map((url, idx) => (
+                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                      <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
+                          setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                        title="Hapus"
+                      >
+                        ✕
+                      </button>
+                      {idx === 0 ? (
+                        <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                          Utama (Thumbnail)
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = parseImages(editForm.imageUrl)
+                            const selected = current[idx]
+                            const remaining = current.filter((_, i) => i !== idx)
+                            const combined = [selected, ...remaining]
+                            setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                          }}
+                          className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                        >
+                          Jadikan Utama
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi</label>
@@ -2253,7 +2272,41 @@ function FormKelolaMedia({ onMediaAdded }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Unggah Foto Galeri (Bisa lebih dari 1)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
+          <input
+            type="url"
+            required
+            className="form-input focus-ring text-sm"
+            placeholder="Tempel URL foto galeri utama di sini"
+            value={parseImages(form.imageUrl)[0] || ''}
+            onChange={(e) => {
+              const val = e.target.value.trim()
+              const current = parseImages(form.imageUrl)
+              const remaining = current.slice(1)
+              const combined = val ? [val, ...remaining] : remaining
+              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
+          <textarea
+            className="form-input focus-ring text-sm min-h-[60px] py-2"
+            placeholder="Tempel URL foto tambahan lainnya di sini, pisahkan dengan koma"
+            value={parseImages(form.imageUrl).slice(1).join(', ')}
+            onChange={(e) => {
+              const val = e.target.value
+              const mainUrl = parseImages(form.imageUrl)[0] || ''
+              const others = val.split(',').map(u => u.trim()).filter(Boolean)
+              const combined = mainUrl ? [mainUrl, ...others] : others
+              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Atau Unggah dari Perangkat (Bisa lebih dari 1)</label>
           <div className="space-y-3">
             <input
               type="file"
@@ -2273,73 +2326,48 @@ function FormKelolaMedia({ onMediaAdded }) {
               </label>
               {uploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
             </div>
-
-            <div className="flex gap-2 max-w-xl">
-              <input
-                type="url"
-                id="media-photo-url-input"
-                className="form-input focus-ring text-sm flex-grow"
-                placeholder="Atau tempel URL foto langsung (bisa Google Drive)"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const inputEl = document.getElementById('media-photo-url-input')
-                  const urlVal = inputEl.value.trim()
-                  if (urlVal) {
-                    const currentUrls = parseImages(form.imageUrl)
-                    const combined = [...currentUrls, urlVal]
-                    updateField('imageUrl', JSON.stringify(combined))
-                    inputEl.value = ''
-                  }
-                }}
-                className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
-              >
-                Tambah URL
-              </button>
-            </div>
-
-            {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                {parseImages(form.imageUrl).map((url, idx) => (
-                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                    <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                        updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                      }}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                      title="Hapus"
-                    >
-                      ✕
-                    </button>
-                    {idx === 0 ? (
-                      <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                        Utama (Thumbnail)
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const current = parseImages(form.imageUrl)
-                          const selected = current[idx]
-                          const remaining = current.filter((_, i) => i !== idx)
-                          const combined = [selected, ...remaining]
-                          updateField('imageUrl', JSON.stringify(combined))
-                        }}
-                        className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                      >
-                        Jadikan Utama
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
+
+        {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
+            {parseImages(form.imageUrl).map((url, idx) => (
+              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                  }}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                  title="Hapus"
+                >
+                  ✕
+                </button>
+                {idx === 0 ? (
+                  <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
+                    Utama (Thumbnail)
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = parseImages(form.imageUrl)
+                      const selected = current[idx]
+                      const remaining = current.filter((_, i) => i !== idx)
+                      const combined = [selected, ...remaining]
+                      updateField('imageUrl', JSON.stringify(combined))
+                    }}
+                    className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
+                  >
+                    Jadikan Utama
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-semibold text-abu-700 mb-1">Deskripsi / Keterangan</label>
@@ -2464,7 +2492,41 @@ function FormKelolaMedia({ onMediaAdded }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Ubah / Tambah Foto Galeri (Bisa lebih dari 1)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
+                <input
+                  type="url"
+                  required
+                  className="form-input focus-ring text-sm"
+                  placeholder="Tempel URL foto galeri utama di sini"
+                  value={parseImages(editForm.imageUrl)[0] || ''}
+                  onChange={(e) => {
+                    const val = e.target.value.trim()
+                    const current = parseImages(editForm.imageUrl)
+                    const remaining = current.slice(1)
+                    const combined = val ? [val, ...remaining] : remaining
+                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
+                <textarea
+                  className="form-input focus-ring text-sm min-h-[60px] py-2"
+                  placeholder="Tempel URL foto tambahan lainnya di sini, pisahkan dengan koma"
+                  value={parseImages(editForm.imageUrl).slice(1).join(', ')}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    const mainUrl = parseImages(editForm.imageUrl)[0] || ''
+                    const others = val.split(',').map(u => u.trim()).filter(Boolean)
+                    const combined = mainUrl ? [mainUrl, ...others] : others
+                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Atau Unggah dari Perangkat (Bisa lebih dari 1)</label>
                 <div className="space-y-3">
                   <input
                     type="file"
