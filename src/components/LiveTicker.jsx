@@ -89,8 +89,14 @@ export default function LiveTicker() {
   // Don't render until we have announcements
   if (!announcements.length) return null
 
-  // Build ticker string — duplicate for seamless loop
-  const tickerText = announcements.join('   ●   ')
+  // Build ticker string — repeat if it's too short to prevent jumpy loop on wide screens
+  let repeatedAnnouncements = [...announcements]
+  if (repeatedAnnouncements.length > 0) {
+    while (repeatedAnnouncements.join('   ●   ').length < 200) {
+      repeatedAnnouncements = [...repeatedAnnouncements, ...announcements]
+    }
+  }
+  const tickerText = repeatedAnnouncements.join('   ●   ')
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-merah-700 text-white py-2 overflow-hidden shadow-lg border-t border-white/10" role="marquee" aria-live="polite">
