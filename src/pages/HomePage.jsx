@@ -136,7 +136,7 @@ export default function HomePage() {
             className="hero-title font-heading text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 md:mb-5 uppercase tracking-wide"
             style={{ opacity: 0, color: '#FFFFFF', textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)' }}
           >
-            Selamat Datang di Portal<br />Karang Taruna RT 02/03
+            Selamat Datang<br />Karang Taruna RT 02/03
           </h1>
 
           <p
