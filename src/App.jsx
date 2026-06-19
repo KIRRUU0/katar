@@ -184,7 +184,9 @@ export default function App() {
                 <p>
                   &copy; {new Date().getFullYear()} Karang Taruna RT 02/03.
                 </p>
-                <p>Hak Cipta Dilindungi.</p>
+                <span className="text-xs text-abu-500 pt-1 text-center ml-2">
+                <p> Hak Cipta Dilindungi.</p>
+                </span>
               </div>
 
             </div>
