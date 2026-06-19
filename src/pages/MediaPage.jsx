@@ -5,17 +5,31 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const parseImages = (imageUrl) => {
   if (!imageUrl) return []
+  
+  const getDirectImageUrl = (url) => {
+    if (!url) return ''
+    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
+    const match = url.match(driveRegex)
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`
+    }
+    return url
+  }
+
+  let urls = []
   if (imageUrl.startsWith('[') && imageUrl.endsWith(']')) {
     try {
-      return JSON.parse(imageUrl)
+      urls = JSON.parse(imageUrl)
     } catch (e) {
       console.error('Failed to parse image_url JSON:', e)
     }
+  } else if (imageUrl.includes(',')) {
+    urls = imageUrl.split(',').map(u => u.trim()).filter(Boolean)
+  } else {
+    urls = [imageUrl.trim()].filter(Boolean)
   }
-  if (imageUrl.includes(',')) {
-    return imageUrl.split(',').map(u => u.trim()).filter(Boolean)
-  }
-  return [imageUrl.trim()].filter(Boolean)
+
+  return urls.map(getDirectImageUrl)
 }
 
 export default function MediaPage() {
