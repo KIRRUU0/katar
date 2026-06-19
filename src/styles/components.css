@@ -1,0 +1,192 @@
+/* ============================================================
+   COMPONENT STYLES — Cards, Badges, Buttons, Forms
+   ============================================================ */
+
+/* === Hover Lift Utility === */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15), 0 8px 12px -8px rgba(0, 0, 0, 0.1);
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.4);
+}
+
+/* === Card Base === */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* === Badge Styles === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.badge-individu {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-grup {
+  background-color: #FFF7ED;
+  color: #C2410C;
+}
+
+.badge-belum {
+  background-color: var(--color-abu-200);
+  color: var(--color-abu-600);
+}
+
+.badge-jalan {
+  background-color: #D1FAE5;
+  color: #065F46;
+  animation: pulse-badge 2s infinite;
+}
+
+.badge-selesai {
+  background-color: var(--color-merah-100);
+  color: var(--color-merah-700);
+}
+
+/* === Button Styles === */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-merah-600) 0%, var(--color-merah-700) 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-merah-500) 0%, var(--color-merah-600) 100%);
+  box-shadow: 0 4px 16px rgba(185, 28, 28, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--color-merah-700);
+  border: 2px solid var(--color-merah-200);
+}
+
+.btn-secondary:hover {
+  background: var(--color-merah-50);
+  border-color: var(--color-merah-400);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+}
+
+.btn-success:hover {
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.45);
+  transform: translateY(-1px);
+}
+
+/* === Form Input === */
+.form-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-abu-200);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-merah-400);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-abu-200);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-merah-400);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* === Glass Card === */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* === Countdown Digit === */
+.countdown-digit {
+  background: linear-gradient(180deg, var(--color-abu-900) 0%, var(--color-abu-800) 100%);
+  color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* === Admin Section === */
+.admin-section {
+  background: white;
+  border-radius: 1rem;
+  border: 1px solid var(--color-abu-200);
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-section {
+    padding: 2rem;
+  }
+}

@@ -11,7 +11,7 @@ const parseImages = (imageUrl) => {
     const trimmed = url.trim()
     const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
     }
     return trimmed
   }
@@ -80,6 +80,14 @@ export default function NewsListPage() {
       }
 
       const combined = [...localNews, ...supabaseNews]
+      
+      // Sort news by date/created_at descending (newest first)
+      combined.sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0)
+        const dateB = new Date(b.date || b.created_at || 0)
+        return dateB - dateA
+      })
+
       if (combined.length > 0 || hasSupabase) {
         setNews(combined)
       } else {

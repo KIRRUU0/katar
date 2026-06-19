@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -11,7 +11,7 @@ const parseImages = (imageUrl) => {
     const trimmed = url.trim()
     const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
     }
     return trimmed
   }
@@ -37,19 +37,42 @@ export default function NewsDetailPage() {
   const [article, setArticle] = useState(null)
   const [otherNews, setOtherNews] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activePhotoUrl, setActivePhotoUrl] = useState(null)
+  const [activePhotoIndex, setActivePhotoIndex] = useState(null)
+  const galleryScrollRef = useRef(null)
+
+  // All parsed images for current article
+  const allImages = article ? parseImages(article.image_url) : []
+
+  // Navigate lightbox
+  const goToPrev = useCallback(() => {
+    setActivePhotoIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1))
+  }, [allImages.length])
+
+  const goToNext = useCallback(() => {
+    setActivePhotoIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0))
+  }, [allImages.length])
 
   // Toggle body class to hide LiveTicker and disable scroll when lightbox is open
   useEffect(() => {
-    if (activePhotoUrl) {
+    if (activePhotoIndex !== null) {
       document.body.classList.add('lightbox-open')
+      const handleKey = (e) => {
+        if (e.key === 'ArrowLeft') goToPrev()
+        else if (e.key === 'ArrowRight') goToNext()
+        else if (e.key === 'Escape') setActivePhotoIndex(null)
+      }
+      window.addEventListener('keydown', handleKey)
+      return () => {
+        document.body.classList.remove('lightbox-open')
+        window.removeEventListener('keydown', handleKey)
+      }
     } else {
       document.body.classList.remove('lightbox-open')
     }
     return () => {
       document.body.classList.remove('lightbox-open')
     }
-  }, [activePhotoUrl])
+  }, [activePhotoIndex, goToPrev, goToNext])
 
   // Format date
   const formatDate = (dateStr) => {
@@ -245,23 +268,51 @@ export default function NewsDetailPage() {
           </p>
 
           {/* Secondary images gallery */}
-          {parseImages(article.image_url).length > 1 && (
+          {allImages.length > 1 && (
             <div className="mt-8 pt-8 border-t border-abu-200">
               <h3 className="font-heading text-lg font-bold text-abu-900 mb-4 flex items-center gap-2">
                 <Icon icon="solar:gallery-bold-duotone" className="w-5 h-5 text-merah-600" />
                 Galeri Foto Terkait
+                <span className="text-sm font-normal text-abu-400 ml-1">({allImages.length} foto)</span>
               </h3>
-              <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-abu-300 scrollbar-track-abu-100">
-                {parseImages(article.image_url).map((img, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => setActivePhotoUrl(img)}
-                    className="relative snap-start min-w-[180px] sm:min-w-[220px] h-28 sm:h-36 rounded-xl overflow-hidden shadow-sm group cursor-pointer hover:shadow-md transition-shadow bg-abu-50 flex-shrink-0"
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                  </div>
-                ))}
+              <div className="relative">
+                {/* Scroll left button */}
+                <button
+                  onClick={() => { galleryScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' }) }}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-md border border-abu-200 flex items-center justify-center hover:bg-merah-50 transition-colors cursor-pointer"
+                  aria-label="Geser kiri"
+                >
+                  <Icon icon="solar:alt-arrow-left-bold" className="w-4 h-4 text-abu-700" />
+                </button>
+                {/* Scroll right button */}
+                <button
+                  onClick={() => { galleryScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' }) }}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white/90 shadow-md border border-abu-200 flex items-center justify-center hover:bg-merah-50 transition-colors cursor-pointer"
+                  aria-label="Geser kanan"
+                >
+                  <Icon icon="solar:alt-arrow-right-bold" className="w-4 h-4 text-abu-700" />
+                </button>
+                <div
+                  ref={galleryScrollRef}
+                  className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-abu-300 scrollbar-track-abu-100 px-10"
+                >
+                  {allImages.map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => setActivePhotoIndex(idx)}
+                      className={`relative snap-start min-w-[180px] sm:min-w-[220px] h-28 sm:h-36 rounded-xl overflow-hidden shadow-sm group cursor-pointer hover:shadow-md transition-all bg-abu-50 flex-shrink-0 ring-2 ${
+                        activePhotoIndex === idx ? 'ring-merah-500' : 'ring-transparent'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                      {/* Image number badge */}
+                      <span className="absolute top-2 left-2 text-[10px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded">
+                        {idx + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -304,21 +355,50 @@ export default function NewsDetailPage() {
           </div>
         </aside>
       </div>
-      {/* Lightbox for news gallery */}
-      {activePhotoUrl && (
+      {/* Lightbox for news gallery with slider navigation */}
+      {activePhotoIndex !== null && allImages[activePhotoIndex] && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
-          onClick={() => setActivePhotoUrl(null)}
+          onClick={() => setActivePhotoIndex(null)}
         >
+          {/* Close button */}
           <button
-            onClick={() => setActivePhotoUrl(null)}
-            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-abu-800 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-abu-700"
+            onClick={() => setActivePhotoIndex(null)}
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-abu-800 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-abu-700 z-10"
             aria-label="Tutup"
           >
             <Icon icon="solar:close-circle-bold" className="w-6 h-6" />
           </button>
+
+          {/* Image counter */}
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 text-white/80 text-sm font-semibold bg-black/50 px-3 py-1 rounded-full z-10">
+            {activePhotoIndex + 1} / {allImages.length}
+          </div>
+
+          {/* Previous button */}
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goToPrev() }}
+              className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm z-10"
+              aria-label="Foto sebelumnya"
+            >
+              <Icon icon="solar:alt-arrow-left-bold" className="w-7 h-7" />
+            </button>
+          )}
+
+          {/* Next button */}
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); goToNext() }}
+              className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-sm z-10"
+              aria-label="Foto berikutnya"
+            >
+              <Icon icon="solar:alt-arrow-right-bold" className="w-7 h-7" />
+            </button>
+          )}
+
           <img
-            src={activePhotoUrl}
+            src={allImages[activePhotoIndex]}
             alt=""
             className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-fade-in"
             onClick={(e) => e.stopPropagation()}

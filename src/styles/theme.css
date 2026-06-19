@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   KATAR RT 03 — Design System (Tailwind CSS v4 @theme)
+   Tema Kemerdekaan: Merah-Putih, Abu-Abu Bersih, Aksen Emas
+   ============================================================ */
+
+@theme {
+  /* === MERAH (Red Independence Palette) === */
+  --color-merah-50: #FEF2F2;
+  --color-merah-100: #FEE2E2;
+  --color-merah-200: #FECACA;
+  --color-merah-300: #FCA5A5;
+  --color-merah-400: #F87171;
+  --color-merah-500: #EF4444;
+  --color-merah-600: #DC2626;
+  --color-merah-700: #B91C1C;
+  --color-merah-800: #991B1B;
+  --color-merah-900: #7F1D1D;
+  --color-merah-950: #450A0A;
+
+  /* === ABU-ABU (Clean Gray Palette) === */
+  --color-abu-50: #F9FAFB;
+  --color-abu-100: #F3F4F6;
+  --color-abu-200: #E5E7EB;
+  --color-abu-300: #D1D5DB;
+  --color-abu-400: #9CA3AF;
+  --color-abu-500: #6B7280;
+  --color-abu-600: #4B5563;
+  --color-abu-700: #374151;
+  --color-abu-800: #1F2937;
+  --color-abu-900: #111827;
+  --color-abu-950: #0B0F19;
+
+  /* === AKSEN === */
+  --color-emas: #F59E0B;
+  --color-emas-light: #FDE68A;
+  --color-emas-dark: #D97706;
+  --color-perak: #9CA3AF;
+  --color-perunggu: #CD7F32;
+
+  /* === FONT FAMILIES === */
+  --font-heading: 'Barlow Condensed', 'Poppins', sans-serif;
+  --font-body: 'Barlow', 'Inter', sans-serif;
+}

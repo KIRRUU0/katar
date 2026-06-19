@@ -1,0 +1,93 @@
+/* ============================================================
+   LAYOUT — Ticker, Scrollbar, News Scroll, Misc
+   ============================================================ */
+
+/* === Hero Gradient === */
+.hero-gradient {
+  background: linear-gradient(135deg, var(--color-merah-700) 0%, var(--color-merah-600) 40%, var(--color-merah-500) 100%);
+}
+
+/* === Live Ticker === */
+.ticker-container {
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ticker-content {
+  display: flex;
+  animation: ticker-scroll 15s linear infinite;
+}
+
+/* Hide marquee when lightbox/modal is open */
+body.lightbox-open [role="marquee"] {
+  display: none !important;
+}
+
+/* Pause Live Ticker Marquee on Hover */
+div[role="marquee"]:hover .ticker-content {
+  animation-play-state: paused;
+  cursor: pointer;
+}
+
+/* === Gold Row (Juara Umum) === */
+.gold-row {
+  background: linear-gradient(90deg, var(--color-emas-light) 0%, #FEF3C7 50%, var(--color-emas-light) 100%);
+  font-weight: 700;
+}
+
+/* === News Carousel Scroll Snap === */
+.news-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.5rem;
+}
+
+.news-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.news-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* === splitText Quote === */
+blockquote[class*="font-heading"] {
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+}
+
+/* === Custom Scrollbar (Desktop) === */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-abu-100);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-abu-300);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-abu-400);
+  }
+}
+
+/* === Hide Scrollbar Utility === */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -12,7 +12,7 @@ const parseImages = (imageUrl) => {
     const trimmed = url.trim()
     const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
     }
     return trimmed
   }
@@ -59,6 +59,7 @@ const formatDate = (dateStr) => {
 
 export default function NewsCarousel() {
   const [news, setNews] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedNews, setSelectedNews] = useState(null)
   const scrollRef = useRef(null)
   const sectionRef = useRef(null)
@@ -67,6 +68,7 @@ export default function NewsCarousel() {
   // ── Fetch news ───────────────────────────────────────────
   useEffect(() => {
     const fetchNews = async () => {
+      setIsLoading(true)
       let supabaseNews = []
       if (isSupabaseConfigured()) {
         try {
@@ -95,11 +97,20 @@ export default function NewsCarousel() {
       }
 
       const combined = [...localNews, ...supabaseNews]
+      
+      // Sort news by date/created_at descending (newest first)
+      combined.sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0)
+        const dateB = new Date(b.date || b.created_at || 0)
+        return dateB - dateA
+      })
+
       if (combined.length > 0) {
         setNews(combined.slice(0, 3))
       } else {
         setNews([])
       }
+      setIsLoading(false)
     }
 
     fetchNews()
@@ -152,7 +163,11 @@ export default function NewsCarousel() {
         </Link>
       </div>
 
-      {news.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16 mx-4 md:mx-0">
+          <div className="w-10 h-10 border-4 border-abu-200 border-t-merah-600 rounded-full animate-spin" />
+        </div>
+      ) : news.length === 0 ? (
         <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
           tidak ada berita atau data disini
         </div>
@@ -163,10 +178,10 @@ export default function NewsCarousel() {
             <Link
               key={item.id}
               to={`/news/${item.id}`}
-              className="news-card card block overflow-hidden opacity-0 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer"
+              className="news-card card flex flex-col overflow-hidden border border-abu-150 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer opacity-0"
             >
               {/* Image */}
-              <div className="relative h-48 overflow-hidden">
+              <div className="relative h-48 overflow-hidden bg-abu-100 flex-shrink-0">
                 <img
                   src={parseImages(item.image_url)[0]}
                   alt={item.title}
@@ -175,24 +190,24 @@ export default function NewsCarousel() {
                   referrerPolicy="no-referrer"
                 />
                 {/* Subtle gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-2xl" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent rounded-t-2xl" />
               </div>
 
-              {/* Text content */}
-              <div className="p-5">
-                <h3 className="font-heading text-lg font-bold text-abu-900 leading-snug mb-2 line-clamp-2">
+              {/* Text content — flex column to align title/desc/date across cards */}
+              <div className="p-5 flex flex-col flex-1">
+                <h3 className="font-heading text-lg font-bold text-abu-900 leading-snug mb-2 line-clamp-2 min-h-[3.25rem]">
                   {item.title}
                 </h3>
-                <p className="text-sm text-abu-500 leading-relaxed mb-4 line-clamp-2">
+                <p className="text-sm text-abu-600 leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]">
                   {item.description}
                 </p>
-                {item.created_at && (
+                {(item.date || item.created_at) && (
                   <time
-                    dateTime={item.created_at}
-                    className="text-xs text-abu-400 font-semibold flex items-center gap-1"
+                    dateTime={item.date || item.created_at}
+                    className="text-xs text-abu-500 font-semibold flex items-center gap-1 mt-auto pt-2 border-t border-abu-100"
                   >
-                    <Icon icon="solar:calendar-bold" className="w-3.5 h-3.5" />
-                    {formatDate(item.created_at)}
+                    <Icon icon="solar:calendar-bold" className="w-3.5 h-3.5 text-abu-450" />
+                    {formatDate(item.date || item.created_at)}
                   </time>
                 )}
               </div>

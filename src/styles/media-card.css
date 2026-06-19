@@ -1,0 +1,63 @@
+/* ============================================================
+   MEDIA CARD — Galeri Foto Kegiatan
+   Ensures title text is always visible on any image background
+   and year/title are aligned across all cards
+   ============================================================ */
+
+.media-card-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1rem;
+  /* Strong multi-stop gradient: solid black at bottom fading up */
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.85) 15%,
+    rgba(0, 0, 0, 0.55) 40%,
+    rgba(0, 0, 0, 0.15) 65%,
+    transparent 100%
+  );
+}
+
+/* Fixed-height text area at the bottom so year + title align across cards */
+.media-card-info {
+  display: flex;
+  flex-direction: column;
+  height: 3.75rem;  /* fixed height = badge + 2-line title */
+}
+
+.media-card-badge {
+  flex-shrink: 0;
+  margin-bottom: 0.25rem;
+}
+
+.media-card-title {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* Triple-layer text shadow for maximum readability */
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 1),
+    0 2px 8px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+@media (min-width: 768px) {
+  .media-card-info {
+    height: 4.25rem;
+  }
+
+  .media-card-title {
+    font-size: 1rem;
+  }
+}

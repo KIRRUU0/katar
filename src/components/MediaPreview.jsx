@@ -12,7 +12,7 @@ const parseImages = (imageUrl) => {
     const trimmed = url.trim()
     const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
     }
     return trimmed
   }
@@ -36,24 +36,53 @@ const parseImages = (imageUrl) => {
 
 export default function MediaPreview() {
   const [photos, setPhotos] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const sectionRef = useRef(null)
   const hasAnimated = useRef(false)
 
   useEffect(() => {
     async function loadPhotos() {
+      setIsLoading(true)
+
+      // Collect all news image URLs to exclude from gallery
+      const newsUrls = new Set()
+
       let supabasePhotos = []
       if (isSupabaseConfigured()) {
         try {
+          // Fetch news URLs for filtering
+          const { data: newsData } = await supabase.from('news').select('image_url')
+          newsData?.forEach(n => {
+            parseImages(n.image_url).forEach(url => {
+              if (url) newsUrls.add(url.trim())
+            })
+          })
+
           const { data, error } = await supabase
             .from('media')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(10)
+            .limit(20)
           if (!error && data) {
             supabasePhotos = data
           }
         } catch (err) {
           console.warn('MediaPreview: Supabase query failed', err)
+        }
+      }
+
+      // Also collect local news URLs for filtering
+      const localNewsData = localStorage.getItem('katar_news_articles')
+      if (localNewsData) {
+        try {
+          const localNews = JSON.parse(localNewsData)
+          localNews.forEach(n => {
+            parseImages(n.image_url).forEach(url => {
+              if (url) newsUrls.add(url.trim())
+            })
+          })
+        } catch {
+          // ignore
         }
       }
 
@@ -67,8 +96,38 @@ export default function MediaPreview() {
         }
       }
 
-      const combined = [...localPhotos, ...supabasePhotos]
-      setPhotos(combined.slice(0, 4))
+      // Merge, filter out news images, and deduplicate
+      const allEntries = [...localPhotos, ...supabasePhotos].filter((entry) => {
+        const entryUrl = (entry.image_url || '').trim()
+        if (!entryUrl) return false
+        // Exclude entries whose images all belong to news
+        const mediaUrls = parseImages(entryUrl)
+        if (mediaUrls.length > 0 && mediaUrls.every(url => newsUrls.has(url.trim()))) {
+          return false
+        }
+        return true
+      })
+
+      const seen = new Set()
+      const deduped = []
+      allEntries.forEach(entry => {
+        const urls = parseImages(entry.image_url)
+        const primaryUrl = urls[0] ? urls[0].trim() : ''
+        if (primaryUrl && !seen.has(primaryUrl)) {
+          seen.add(primaryUrl)
+          deduped.push(entry)
+        }
+      })
+
+      // Sort by date/created_at descending
+      deduped.sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0)
+        const dateB = new Date(b.date || b.created_at || 0)
+        return dateB - dateA
+      })
+
+      setPhotos(deduped.slice(0, 4))
+      setIsLoading(false)
     }
 
     loadPhotos()
@@ -121,7 +180,11 @@ export default function MediaPreview() {
         </Link>
       </div>
 
-      {photos.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16 mx-4 md:mx-0">
+          <div className="w-10 h-10 border-4 border-abu-200 border-t-merah-600 rounded-full animate-spin" />
+        </div>
+      ) : photos.length === 0 ? (
         <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
           tidak ada media atau gambar disini
         </div>
@@ -141,14 +204,16 @@ export default function MediaPreview() {
                 loading="lazy"
                 referrerPolicy="no-referrer"
               />
-              {/* Dark Overlay with Title */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity">
-                <span className="text-[10px] uppercase font-extrabold text-merah-400 tracking-wider mb-1">
-                  Tahun {item.year}
-                </span>
-                <h3 className="text-xs md:text-sm font-heading font-bold text-white line-clamp-2 leading-tight">
-                  {item.title}
-                </h3>
+              {/* Overlay with title — uses dedicated CSS for guaranteed visibility */}
+              <div className="media-card-overlay">
+                <div className="media-card-info">
+                  <span className="media-card-badge inline-flex items-center self-start text-[10px] uppercase font-extrabold tracking-wider bg-merah-600 text-white px-2 py-0.5 rounded">
+                    Tahun {item.year}
+                  </span>
+                  <h3 className="media-card-title">
+                    {item.title}
+                  </h3>
+                </div>
               </div>
             </Link>
           ))}

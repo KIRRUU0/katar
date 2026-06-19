@@ -140,7 +140,6 @@ export default function App() {
                   {[
                     { href: "https://www.instagram.com/iremda_02/", icon: "ri:instagram-line", label: "Instagram" },
                     { href: "https://wa.me/6285781300161", icon: "ri:whatsapp-line", label: "WhatsApp" },
-                    { href: "iremdaa0203@gmail.com", icon: "solar:letter-bold", label: "Email" }
                   ].map((social, idx) => (
                     <a 
                       key={idx}
@@ -164,7 +163,6 @@ export default function App() {
                   { to: "/org", label: "Pengurus" },
                   { to: "/media", label: "Galeri" },
                   { to: "/news", label: "Berita" },
-                  { to: "/admin", label: "Admin" },
                 ].map((link, idx) => (
                   <Link 
                     key={idx}

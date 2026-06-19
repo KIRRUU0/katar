@@ -11,7 +11,7 @@ const parseImages = (imageUrl) => {
     const trimmed = url.trim()
     const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
     }
     return trimmed
   }
@@ -71,8 +71,8 @@ export default function MediaPage() {
     async function loadPhotos() {
       setLoading(true)
       let supabasePhotos = []
+      let supabaseNewsPhotos = []
       let hasSupabase = false
-      const newsImageUrls = new Set()
 
       if (isSupabaseConfigured()) {
         try {
@@ -87,15 +87,28 @@ export default function MediaPage() {
             hasSupabase = true
           }
 
-          // Load news image URLs to avoid showing older auto-synced news items in media
+          // Fetch news entries to merge dynamically
           const { data: newsData, error: newsError } = await supabase
             .from('news')
-            .select('image_url')
+            .select('*')
+            .order('created_at', { ascending: false })
+
           if (!newsError && newsData) {
-            newsData.forEach((n) => {
+            newsData.forEach(n => {
               const urls = parseImages(n.image_url)
-              urls.forEach((url) => {
-                if (url) newsImageUrls.add(url.trim())
+              const year = n.date ? new Date(n.date).getFullYear() : new Date().getFullYear()
+              urls.forEach((url, idx) => {
+                if (url) {
+                  supabaseNewsPhotos.push({
+                    id: `news-sync-${n.id}-${idx}`,
+                    title: n.title,
+                    year: year,
+                    date: n.date,
+                    image_url: JSON.stringify([url]),
+                    description: n.description || '',
+                    is_news_sync: true
+                  })
+                }
               })
             })
           }
@@ -115,34 +128,50 @@ export default function MediaPage() {
         }
       }
 
-      // Also collect local news image URLs to prevent local auto-sync duplicates
+      // Also get local news entries to merge dynamically
+      let localNewsPhotos = []
       const localNewsData = localStorage.getItem('katar_news_articles')
       if (localNewsData) {
         try {
           const localNews = JSON.parse(localNewsData)
-          localNews.forEach((n) => {
-            parseImages(n.image_url).forEach((url) => {
-              if (url) newsImageUrls.add(url.trim())
+          localNews.forEach(n => {
+            const urls = parseImages(n.image_url)
+            const year = n.date ? new Date(n.date).getFullYear() : new Date().getFullYear()
+            urls.forEach((url, idx) => {
+              if (url) {
+                localNewsPhotos.push({
+                  id: `news-sync-local-${n.id}-${idx}`,
+                  title: n.title,
+                  year: year,
+                  date: n.date,
+                  image_url: JSON.stringify([url]),
+                  description: n.description || '',
+                  is_news_sync: true
+                })
+              }
             })
           })
         } catch {
-          // ignore invalid local news data
+          // ignore
         }
       }
 
-      // Merge media entries only and filter out duplicates from old news auto-sync
-      const allEntries = [...localPhotos, ...supabasePhotos].filter((entry) => {
+      // Merge media entries and news virtual entries
+      const allEntries = [...localPhotos, ...localNewsPhotos, ...supabasePhotos, ...supabaseNewsPhotos].filter((entry) => {
         const entryUrl = (entry.image_url || '').trim()
-        return entryUrl && !newsImageUrls.has(entryUrl)
+        return !!entryUrl
       })
 
-      // Deduplicate by image_url to prevent double entries from auto-sync
+      // Deduplicate by the actual image URL to prevent duplicate entries
       const seen = new Set()
-      const deduped = allEntries.filter(entry => {
-        const key = (entry.image_url || '').trim()
-        if (!key || seen.has(key)) return false
-        seen.add(key)
-        return true
+      const deduped = []
+      allEntries.forEach(entry => {
+        const urls = parseImages(entry.image_url)
+        const primaryUrl = urls[0] ? urls[0].trim() : ''
+        if (primaryUrl && !seen.has(primaryUrl)) {
+          seen.add(primaryUrl)
+          deduped.push(entry)
+        }
       })
 
       // Sort by date/created_at descending
@@ -248,17 +277,34 @@ export default function MediaPage() {
           }))
         })
 
-        const groupByDate = (items) => {
+        const groupByAlbum = (items) => {
           const groups = items.reduce((acc, item) => {
-            const key = item.date || item.created_at?.split('T')[0] || 'unknown'
+            const dateVal = item.date || item.created_at?.split('T')[0] || 'unknown'
+            const titleVal = item.title || 'Tanpa Judul'
+            const isNews = item.is_news_sync ? 'news' : 'media'
+            const key = `${dateVal}|||${titleVal}|||${isNews}`
             if (!acc[key]) acc[key] = []
             acc[key].push(item)
             return acc
           }, {})
 
           return Object.entries(groups)
-            .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-            .map(([date, items]) => ({ date, items }))
+            .sort(([keyA], [keyB]) => {
+              const dateA = keyA.split('|||')[0]
+              const dateB = keyB.split('|||')[0]
+              if (dateA === 'unknown') return 1
+              if (dateB === 'unknown') return -1
+              return new Date(dateB).getTime() - new Date(dateA).getTime()
+            })
+            .map(([key, items]) => {
+              const [date, title, isNews] = key.split('|||')
+              return {
+                date,
+                title,
+                isNewsSync: isNews === 'news',
+                items
+              }
+            })
         }
 
         return (
@@ -267,7 +313,7 @@ export default function MediaPage() {
             .filter((y) => flatPhotos.some((p) => p.year === y))
             .map((y) => {
               const yearItems = flatPhotos.filter((p) => p.year === y)
-              const dateGroups = groupByDate(yearItems)
+              const albumGroups = groupByAlbum(yearItems)
               return (
                 <div key={y} className="space-y-6">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-abu-200 pb-2">
@@ -276,7 +322,7 @@ export default function MediaPage() {
                         Tahun {y}
                       </h2>
                       <p className="text-sm text-abu-500 mt-1">
-                        Terbagi menjadi {dateGroups.length} tanggal berbeda
+                        Terbagi menjadi {albumGroups.length} album kegiatan
                       </p>
                     </div>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-merah-50 text-merah-700 border border-merah-100">
@@ -285,17 +331,27 @@ export default function MediaPage() {
                   </div>
 
                   <div className="space-y-8">
-                    {dateGroups.map(({ date, items }) => {
-                      const displayLabel = date === 'unknown' ? 'Tanpa Tanggal' : formatDate(date)
+                    {albumGroups.map(({ date, title, isNewsSync, items }) => {
                       return (
-                        <div key={date} className="space-y-4">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-heading text-base md:text-lg font-bold text-abu-900">
-                              {displayLabel}
-                            </h3>
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-abu-100 text-abu-700 border border-abu-200">
-                              {items.length} Foto
-                            </span>
+                        <div key={`${date}-${title}`} className="space-y-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center flex-wrap gap-2">
+                              <h3 className="font-heading text-base md:text-lg font-bold text-abu-900 leading-tight">
+                                {title}
+                              </h3>
+                              {isNewsSync && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 leading-none">
+                                  <Icon icon="solar:document-text-bold" className="w-3.5 h-3.5" />
+                                  Berita
+                                </span>
+                              )}
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-abu-100 text-abu-700 border border-abu-200">
+                                {items.length} Foto
+                              </span>
+                            </div>
+                            <p className="text-xs text-abu-500 font-medium">
+                              {date === 'unknown' ? 'Tanpa Tanggal' : formatDate(date)}
+                            </p>
                           </div>
 
                           <div className="grid grid-rows-2 grid-flow-col gap-3 justify-start overflow-x-auto pb-4 pt-1 px-1 -mx-4 md:mx-0 rounded-3xl border border-abu-200/50 shadow-sm scrollbar-thin h-[380px] md:h-[430px]">
@@ -468,7 +524,7 @@ export default function MediaPage() {
                     <span className="inline-flex items-center justify-center h-6 bg-merah-700 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm leading-none whitespace-nowrap">
                       {activeItem.date ? formatDate(activeItem.date) : `Tahun ${activeItem.year}`}
                     </span>
-                    {activeItem._source === 'news' && (
+                    {activeItem.is_news_sync && (
                       <span className="inline-flex items-center justify-center h-6 bg-blue-950 text-blue-300 border border-blue-800 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm gap-1 leading-none whitespace-nowrap">
                         <Icon icon="solar:document-text-bold" className="w-3 h-3" />
                         Dari Berita
