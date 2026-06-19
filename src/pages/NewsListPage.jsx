@@ -69,14 +69,16 @@ export default function NewsListPage() {
     const fetchNews = async () => {
       setLoading(true)
       let supabaseNews = []
+      let hasSupabase = false
       if (isSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
             .from('news')
             .select('*')
             .order('created_at', { ascending: false })
-          if (!error && data?.length) {
-            supabaseNews = data
+          if (!error) {
+            supabaseNews = data || []
+            hasSupabase = true
           }
         } catch (err) {
           console.warn('NewsListPage: Supabase query failed', err)
@@ -95,7 +97,7 @@ export default function NewsListPage() {
       }
 
       const combined = [...localNews, ...supabaseNews]
-      if (combined.length > 0) {
+      if (combined.length > 0 || hasSupabase) {
         setNews(combined)
       } else {
         setNews(DEMO_NEWS)
@@ -137,8 +139,14 @@ export default function NewsListPage() {
           ))}
         </div>
       ) : news.length === 0 ? (
-        <div className="card p-12 text-center">
-          <p className="text-abu-500">Belum ada berita kegiatan diunggah.</p>
+        <div className="card p-10 flex flex-col items-center justify-center text-center border border-dashed border-abu-300 bg-white rounded-3xl animate-fade-in">
+          <img src="/empty-berita.svg" alt="Belum ada berita" className="w-32 h-32 mb-4 object-contain" />
+          <p className="text-abu-850 font-heading text-lg font-bold">
+            Belum ada berita
+          </p>
+          <p className="text-abu-500 text-sm mt-1 max-w-sm">
+            Saat ini belum ada berita atau kegiatan yang diunggah. Silakan hubungi admin.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">

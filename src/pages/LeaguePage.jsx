@@ -17,70 +17,6 @@ import MedalTable from '../components/MedalTable'
  * Falls back to demo data when Supabase is not configured or the query fails.
  */
 
-// ─── Fallback demo tournaments ──────────────────────────────────
-const demoTournaments = [
-  {
-    id: 'demo-1',
-    name: 'Lomba Balap Karung',
-    type: 'individu',
-    category: 'bapak_bapak',
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-01T08:00:00+07:00',
-    pj: 'Hirzan Arziqi'
-  },
-  {
-    id: 'demo-2',
-    name: 'Lomba Tarik Tambang',
-    type: 'grup',
-    category: 'pasangan',
-    status: 'belum',
-    location: 'Pos Ronda RT 03',
-    schedule: '2026-08-01T10:00:00+07:00',
-    pj: 'Ridho Ramadhani'
-  },
-  {
-    id: 'demo-3',
-    name: 'Lomba Panjat Pinang',
-    type: 'grup',
-    category: 'remaja_pria',
-    status: 'belum',
-    location: 'Jalan Utama Depan Musholla',
-    schedule: '2026-08-02T09:00:00+07:00',
-    pj: 'Muhammad Haekal Arrafi'
-  },
-  {
-    id: 'demo-4',
-    name: 'Lomba Makan Kerupuk',
-    type: 'individu',
-    category: 'anak_7_12',
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-02T14:00:00+07:00',
-    pj: 'Tri Dewi Setyawati'
-  },
-  {
-    id: 'demo-5',
-    name: 'Lomba 17an Anak: Estafet Kelereng',
-    type: 'individu',
-    category: 'anak_4_6',
-    status: 'belum',
-    location: 'Gang 2',
-    schedule: '2026-08-03T08:00:00+07:00',
-    pj: 'Nadia Istifana'
-  },
-  {
-    id: 'demo-6',
-    name: 'Lomba Futsal Antar Gang',
-    type: 'grup',
-    category: 'remaja_pria',
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-03T15:00:00+07:00',
-    pj: 'Bintang R Sinaga'
-  },
-]
-
 export default function LeaguePage() {
   const [tournaments, setTournaments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -115,8 +51,8 @@ export default function LeaguePage() {
             .eq('years.year_number', 2026)
             .order('schedule', { ascending: true })
 
-          if (!error && data?.length) {
-            setTournaments(data)
+          if (!error) {
+            setTournaments(data || [])
             setLoading(false)
             return
           }
@@ -128,7 +64,7 @@ export default function LeaguePage() {
         }
       }
 
-      // Fallback to demo data
+      // Fallback to demo data only if Supabase not configured/fails
       setTournaments(demoTournaments)
       setLoading(false)
     }
@@ -284,9 +220,13 @@ export default function LeaguePage() {
           </div>
         ) : filteredTournaments.length === 0 ? (
           /* Empty state */
-          <div className="card p-10 text-center border border-dashed border-abu-300 bg-white">
-            <p className="text-abu-500 font-medium">
-              Tidak ada jadwal lomba untuk kategori ini.
+          <div className="card p-10 flex flex-col items-center justify-center text-center border border-dashed border-abu-300 bg-white rounded-3xl animate-fade-in">
+            <img src="/empty-lomba.svg" alt="Belum ada lomba" className="w-32 h-32 mb-4 object-contain" />
+            <p className="text-abu-850 font-heading text-lg font-bold">
+              Belum ada lomba
+            </p>
+            <p className="text-abu-500 text-sm mt-1 max-w-sm">
+              Tidak ada jadwal lomba untuk kategori ini. Hubungi admin untuk informasi lebih lanjut.
             </p>
           </div>
         ) : (

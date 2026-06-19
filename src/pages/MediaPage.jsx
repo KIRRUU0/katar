@@ -87,6 +87,8 @@ export default function MediaPage() {
   useEffect(() => {
     async function loadPhotos() {
       setLoading(true)
+      let supabasePhotos = []
+      let hasSupabase = false
       if (isSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
@@ -94,10 +96,9 @@ export default function MediaPage() {
             .select('*')
             .order('created_at', { ascending: false })
 
-          if (!error && data?.length) {
-            setPhotos(data)
-            setLoading(false)
-            return
+          if (!error) {
+            supabasePhotos = data || []
+            hasSupabase = true
           }
         } catch (err) {
           console.warn('MediaPage: Supabase query failed, falling back to demo photos', err)
@@ -106,8 +107,18 @@ export default function MediaPage() {
 
       // Check local storage for added photos
       const localData = localStorage.getItem('katar_media_photos')
+      let localPhotos = []
       if (localData) {
-        setPhotos(JSON.parse(localData))
+        try {
+          localPhotos = JSON.parse(localData)
+        } catch {
+          localPhotos = []
+        }
+      }
+
+      const combined = [...localPhotos, ...supabasePhotos]
+      if (combined.length > 0 || hasSupabase) {
+        setPhotos(combined)
       } else {
         setPhotos(DEMO_PHOTOS)
       }
@@ -319,8 +330,14 @@ export default function MediaPage() {
           </div>
         </div>
       ) : photos.length === 0 ? (
-        <div className="card p-12 text-center">
-          <p className="text-abu-500">Belum ada foto kenangan diunggah.</p>
+        <div className="card p-10 flex flex-col items-center justify-center text-center border border-dashed border-abu-300 bg-white rounded-3xl animate-fade-in">
+          <img src="/empty-media.svg" alt="Belum ada foto" className="w-32 h-32 mb-4 object-contain" />
+          <p className="text-abu-850 font-heading text-lg font-bold">
+            Belum ada foto
+          </p>
+          <p className="text-abu-500 text-sm mt-1 max-w-sm">
+            Saat ini belum ada dokumentasi foto kenangan yang diunggah. Silakan hubungi admin.
+          </p>
         </div>
       ) : (
         <div className="space-y-12">
