@@ -12,11 +12,6 @@ import { Icon } from '@iconify/react'
  * - Red background, white text, horizontal CSS ticker animation
  */
 
-const DEMO_ANNOUNCEMENTS = [
-  'Pendaftaran Lomba 17 Agustus 2026 dibuka!',
-  'Lomba Futsal Antar Gang — segera daftar!',
-  'Rapat koordinasi panitia hari Minggu jam 19:00',
-]
 
 export default function LiveTicker() {
   const [announcements, setAnnouncements] = useState([])
