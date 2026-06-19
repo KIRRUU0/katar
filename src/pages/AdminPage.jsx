@@ -1683,29 +1683,11 @@ function FormKelolaBerita() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
-          <input
-            type="url"
-            required
-            className="form-input focus-ring text-sm"
-            placeholder="Tempel URL gambar utama / banner kegiatan di sini"
-            value={parseImages(form.imageUrl)[0] || ''}
-            onChange={(e) => {
-              const val = e.target.value.trim()
-              const current = parseImages(form.imageUrl)
-              const remaining = current.slice(1)
-              const combined = val ? [val, ...remaining] : remaining
-              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
-            }}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
           <input
             type="text"
             className="form-input focus-ring text-sm"
-            placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+            placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
             value={tempGalleryInput}
             onChange={(e) => setTempGalleryInput(e.target.value)}
             onKeyDown={(e) => {
@@ -1714,9 +1696,7 @@ function FormKelolaBerita() {
                 const url = tempGalleryInput.trim()
                 if (url) {
                   const current = parseImages(form.imageUrl)
-                  const mainUrl = current[0] || ''
-                  const others = current.slice(1)
-                  const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                  const combined = [...current, url]
                   updateField('imageUrl', JSON.stringify(combined))
                   setTempGalleryInput('')
                 }
@@ -1737,9 +1717,7 @@ function FormKelolaBerita() {
               if (newUrls.length > 0) {
                 e.preventDefault()
                 const current = parseImages(form.imageUrl)
-                const mainUrl = current[0] || ''
-                const others = current.slice(1)
-                const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                const combined = [...current, ...newUrls]
                 updateField('imageUrl', JSON.stringify(combined))
                 setTempGalleryInput('')
               }
@@ -1792,25 +1770,6 @@ function FormKelolaBerita() {
                 >
                   ✕
                 </button>
-                {idx === 0 ? (
-                  <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                    Utama (Thumbnail)
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = parseImages(form.imageUrl)
-                      const selected = current[idx]
-                      const remaining = current.filter((_, i) => i !== idx)
-                      const combined = [selected, ...remaining]
-                      updateField('imageUrl', JSON.stringify(combined))
-                    }}
-                    className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                  >
-                    Jadikan Utama
-                  </button>
-                )}
               </div>
             ))}
           </div>
@@ -1932,29 +1891,11 @@ function FormKelolaBerita() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
-                <input
-                  type="url"
-                  required
-                  className="form-input focus-ring text-sm"
-                  placeholder="Tempel URL gambar utama / banner kegiatan di sini"
-                  value={parseImages(editForm.imageUrl)[0] || ''}
-                  onChange={(e) => {
-                    const val = e.target.value.trim()
-                    const current = parseImages(editForm.imageUrl)
-                    const remaining = current.slice(1)
-                    const combined = val ? [val, ...remaining] : remaining
-                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
                 <input
                   type="text"
                   className="form-input focus-ring text-sm"
-                  placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+                  placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
                   value={tempEditGalleryInput}
                   onChange={(e) => setTempEditGalleryInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -1963,9 +1904,7 @@ function FormKelolaBerita() {
                       const url = tempEditGalleryInput.trim()
                       if (url) {
                         const current = parseImages(editForm.imageUrl)
-                        const mainUrl = current[0] || ''
-                        const others = current.slice(1)
-                        const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                        const combined = [...current, url]
                         setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
                         setTempEditGalleryInput('')
                       }
@@ -1986,9 +1925,7 @@ function FormKelolaBerita() {
                     if (newUrls.length > 0) {
                       e.preventDefault()
                       const current = parseImages(editForm.imageUrl)
-                      const mainUrl = current[0] || ''
-                      const others = current.slice(1)
-                      const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                      const combined = [...current, ...newUrls]
                       setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
                       setTempEditGalleryInput('')
                     }
@@ -2041,25 +1978,6 @@ function FormKelolaBerita() {
                       >
                         ✕
                       </button>
-                      {idx === 0 ? (
-                        <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                          Utama (Thumbnail)
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const current = parseImages(editForm.imageUrl)
-                            const selected = current[idx]
-                            const remaining = current.filter((_, i) => i !== idx)
-                            const combined = [selected, ...remaining]
-                            setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
-                          }}
-                          className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                        >
-                          Jadikan Utama
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -2385,29 +2303,11 @@ function FormKelolaMedia({ onMediaAdded }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
-          <input
-            type="url"
-            required
-            className="form-input focus-ring text-sm"
-            placeholder="Tempel URL foto galeri utama di sini"
-            value={parseImages(form.imageUrl)[0] || ''}
-            onChange={(e) => {
-              const val = e.target.value.trim()
-              const current = parseImages(form.imageUrl)
-              const remaining = current.slice(1)
-              const combined = val ? [val, ...remaining] : remaining
-              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
-            }}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
           <input
             type="text"
             className="form-input focus-ring text-sm"
-            placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+            placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
             value={tempGalleryInput}
             onChange={(e) => setTempGalleryInput(e.target.value)}
             onKeyDown={(e) => {
@@ -2416,9 +2316,7 @@ function FormKelolaMedia({ onMediaAdded }) {
                 const url = tempGalleryInput.trim()
                 if (url) {
                   const current = parseImages(form.imageUrl)
-                  const mainUrl = current[0] || ''
-                  const others = current.slice(1)
-                  const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                  const combined = [...current, url]
                   updateField('imageUrl', JSON.stringify(combined))
                   setTempGalleryInput('')
                 }
@@ -2439,9 +2337,7 @@ function FormKelolaMedia({ onMediaAdded }) {
               if (newUrls.length > 0) {
                 e.preventDefault()
                 const current = parseImages(form.imageUrl)
-                const mainUrl = current[0] || ''
-                const others = current.slice(1)
-                const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                const combined = [...current, ...newUrls]
                 updateField('imageUrl', JSON.stringify(combined))
                 setTempGalleryInput('')
               }
@@ -2494,25 +2390,6 @@ function FormKelolaMedia({ onMediaAdded }) {
                 >
                   ✕
                 </button>
-                {idx === 0 ? (
-                  <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                    Utama (Thumbnail)
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = parseImages(form.imageUrl)
-                      const selected = current[idx]
-                      const remaining = current.filter((_, i) => i !== idx)
-                      const combined = [selected, ...remaining]
-                      updateField('imageUrl', JSON.stringify(combined))
-                    }}
-                    className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                  >
-                    Jadikan Utama
-                  </button>
-                )}
               </div>
             ))}
           </div>
@@ -2649,29 +2526,11 @@ function FormKelolaMedia({ onMediaAdded }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Utama / Thumbnail (Bisa Google Drive / URL lainnya)</label>
-                <input
-                  type="url"
-                  required
-                  className="form-input focus-ring text-sm"
-                  placeholder="Tempel URL foto galeri utama di sini"
-                  value={parseImages(editForm.imageUrl)[0] || ''}
-                  onChange={(e) => {
-                    const val = e.target.value.trim()
-                    const current = parseImages(editForm.imageUrl)
-                    const remaining = current.slice(1)
-                    const combined = val ? [val, ...remaining] : remaining
-                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
                 <input
                   type="text"
                   className="form-input focus-ring text-sm"
-                  placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+                  placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
                   value={tempEditGalleryInput}
                   onChange={(e) => setTempEditGalleryInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -2680,9 +2539,7 @@ function FormKelolaMedia({ onMediaAdded }) {
                       const url = tempEditGalleryInput.trim()
                       if (url) {
                         const current = parseImages(editForm.imageUrl)
-                        const mainUrl = current[0] || ''
-                        const others = current.slice(1)
-                        const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                        const combined = [...current, url]
                         setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
                         setTempEditGalleryInput('')
                       }
@@ -2703,9 +2560,7 @@ function FormKelolaMedia({ onMediaAdded }) {
                     if (newUrls.length > 0) {
                       e.preventDefault()
                       const current = parseImages(editForm.imageUrl)
-                      const mainUrl = current[0] || ''
-                      const others = current.slice(1)
-                      const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                      const combined = [...current, ...newUrls]
                       setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
                       setTempEditGalleryInput('')
                     }
@@ -2735,30 +2590,6 @@ function FormKelolaMedia({ onMediaAdded }) {
                     {editUploading && <span className="text-xs text-abu-400">Mengunggah...</span>}
                   </div>
 
-                  <div className="flex gap-2 max-w-xl">
-                    <input
-                      type="url"
-                      id="edit-media-photo-url-input"
-                      className="form-input focus-ring text-sm flex-grow"
-                      placeholder="Atau tempel URL foto langsung (bisa Google Drive)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const inputEl = document.getElementById('edit-media-photo-url-input')
-                        const urlVal = inputEl.value.trim()
-                        if (urlVal) {
-                          const currentUrls = parseImages(editForm.imageUrl)
-                          const combined = [...currentUrls, urlVal]
-                          setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
-                          inputEl.value = ''
-                        }
-                      }}
-                      className="btn btn-secondary text-xs px-4 py-2 min-h-[44px]"
-                    >
-                      Tambah URL
-                    </button>
-                  </div>
                   {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                       {parseImages(editForm.imageUrl).map((url, idx) => (
@@ -2780,25 +2611,6 @@ function FormKelolaMedia({ onMediaAdded }) {
                           >
                             ✕
                           </button>
-                          {idx === 0 ? (
-                            <span className="absolute bottom-1 left-1 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-10">
-                              Utama (Thumbnail)
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const current = parseImages(editForm.imageUrl)
-                                const selected = current[idx]
-                                const remaining = current.filter((_, i) => i !== idx)
-                                const combined = [selected, ...remaining]
-                                setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
-                              }}
-                              className="absolute bottom-1 left-1 bg-black/60 hover:bg-merah-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer z-10"
-                            >
-                              Jadikan Utama
-                            </button>
-                          )}
                         </div>
                       ))}
                     </div>
