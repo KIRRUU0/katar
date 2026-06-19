@@ -75,10 +75,15 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
-    const match = url.match(driveRegex)
-    if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`
+    // 1. Matches /d/FILE_ID
+    const dMatch = url.match(/\/d\/([a-zA-Z0-9_-]{25,})/i)
+    if (dMatch && dMatch[1]) {
+      return `https://lh3.googleusercontent.com/d/${dMatch[1]}`
+    }
+    // 2. Matches id=FILE_ID query parameter
+    const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]{25,})/i)
+    if (idMatch && idMatch[1]) {
+      return `https://lh3.googleusercontent.com/d/${idMatch[1]}`
     }
     return url
   }
@@ -1750,28 +1755,35 @@ function FormKelolaBerita() {
         </div>
 
         {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-            {parseImages(form.imageUrl).map((url, idx) => (
-              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                <img
-                  src={url}
-                  alt={`Preview ${idx + 1}`}
-                  className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
-                  onClick={() => setLightboxUrl(url)}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                  }}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                  title="Hapus"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+          <div className="space-y-1.5 pt-2">
+            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar)</span>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+              {parseImages(form.imageUrl).map((url, idx) => (
+                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                  <img
+                    src={url}
+                    alt={`Preview ${idx + 1}`}
+                    className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                    onClick={() => setLightboxUrl(url)}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                      updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                    }}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                    title="Hapus"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1872,9 +1884,10 @@ function FormKelolaBerita() {
               </h3>
               <button
                 onClick={() => setEditingNews(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white text-lg font-bold cursor-pointer focus-ring"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white cursor-pointer focus-ring"
+                title="Tutup"
               >
-                ✕
+                <Icon icon="solar:close-circle-bold" className="w-6 h-6 text-white/80 hover:text-white transition-colors" />
               </button>
             </div>
 
@@ -1958,28 +1971,35 @@ function FormKelolaBerita() {
               </div>
 
               {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                  {parseImages(editForm.imageUrl).map((url, idx) => (
-                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                      <img
-                        src={url}
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
-                        onClick={() => setLightboxUrl(url)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
-                          setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
-                        }}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                        title="Hapus"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                <div className="space-y-1.5 pt-2">
+                  <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar)</span>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {parseImages(editForm.imageUrl).map((url, idx) => (
+                      <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                        <img
+                          src={url}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          onClick={() => setLightboxUrl(url)}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
+                            setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+                          }}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                          title="Hapus"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1997,16 +2017,18 @@ function FormKelolaBerita() {
                 <button
                   type="button"
                   onClick={() => setEditingNews(null)}
-                  className="btn btn-secondary cursor-pointer min-h-[44px]"
+                  className="btn btn-secondary cursor-pointer min-h-[44px] flex items-center gap-1.5"
                 >
-                  Batal
+                  <Icon icon="solar:close-square-bold" className="w-4 h-4" />
+                  <span>Batal</span>
                 </button>
                 <button
                   type="submit"
                   disabled={loading || editUploading}
-                  className="btn btn-primary cursor-pointer min-h-[44px]"
+                  className="btn btn-primary cursor-pointer min-h-[44px] flex items-center gap-1.5"
                 >
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  <Icon icon="solar:check-circle-bold" className="w-4 h-4" />
+                  <span>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
                 </button>
               </div>
             </form>
@@ -2370,28 +2392,35 @@ function FormKelolaMedia({ onMediaAdded }) {
         </div>
 
         {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-            {parseImages(form.imageUrl).map((url, idx) => (
-              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                <img
-                  src={url}
-                  alt={`Preview ${idx + 1}`}
-                  className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
-                  onClick={() => setLightboxUrl(url)}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                  }}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                  title="Hapus"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+          <div className="space-y-1.5 pt-2">
+            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar)</span>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+              {parseImages(form.imageUrl).map((url, idx) => (
+                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                  <img
+                    src={url}
+                    alt={`Preview ${idx + 1}`}
+                    className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                    onClick={() => setLightboxUrl(url)}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                      updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                    }}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                    title="Hapus"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -2491,9 +2520,10 @@ function FormKelolaMedia({ onMediaAdded }) {
               </h3>
               <button
                 onClick={() => setEditingMedia(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white text-lg font-bold cursor-pointer focus-ring"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white cursor-pointer focus-ring"
+                title="Tutup"
               >
-                ✕
+                <Icon icon="solar:close-circle-bold" className="w-6 h-6 text-white/80 hover:text-white transition-colors" />
               </button>
             </div>
 
@@ -2591,28 +2621,35 @@ function FormKelolaMedia({ onMediaAdded }) {
                   </div>
 
                   {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                      {parseImages(editForm.imageUrl).map((url, idx) => (
-                        <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                          <img
-                            src={url}
-                            alt={`Preview ${idx + 1}`}
-                            className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
-                            onClick={() => setLightboxUrl(url)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
-                              setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
-                            }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                            title="Hapus"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
+                    <div className="space-y-1.5 pt-2">
+                      <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar)</span>
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {parseImages(editForm.imageUrl).map((url, idx) => (
+                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                            <img
+                              src={url}
+                              alt={`Preview ${idx + 1}`}
+                              className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                              onClick={() => setLightboxUrl(url)}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
+                                setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+                              }}
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
+                              title="Hapus"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2631,16 +2668,18 @@ function FormKelolaMedia({ onMediaAdded }) {
                 <button
                   type="button"
                   onClick={() => setEditingMedia(null)}
-                  className="btn btn-secondary cursor-pointer min-h-[44px]"
+                  className="btn btn-secondary cursor-pointer min-h-[44px] flex items-center gap-1.5"
                 >
-                  Batal
+                  <Icon icon="solar:close-square-bold" className="w-4 h-4" />
+                  <span>Batal</span>
                 </button>
                 <button
                   type="submit"
                   disabled={loading || editUploading}
-                  className="btn btn-primary cursor-pointer min-h-[44px]"
+                  className="btn btn-primary cursor-pointer min-h-[44px] flex items-center gap-1.5"
                 >
-                  {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  <Icon icon="solar:check-circle-bold" className="w-4 h-4" />
+                  <span>{loading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
                 </button>
               </div>
             </form>
