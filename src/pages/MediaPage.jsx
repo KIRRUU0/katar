@@ -37,19 +37,10 @@ export default function MediaPage() {
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Filter & upload states
+  // Filter states
   const [selectedYear, setSelectedYear] = useState('Semua')
   const [lightboxPhotosList, setLightboxPhotosList] = useState([])
   const [lightboxIndex, setLightboxIndex] = useState(-1)
-  
-  // Upload form states
-  const [uploadOpen, setUploadOpen] = useState(false)
-  const [title, setTitle] = useState('')
-  const [year, setYear] = useState(new Date().getFullYear())
-  const [imageUrl, setImageUrl] = useState('')
-  const [description, setDescription] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [toast, setToast] = useState({ message: '', type: '' })
 
   // Load photos
   useEffect(() => {
@@ -96,55 +87,7 @@ export default function MediaPage() {
     loadPhotos()
   }, [])
 
-  // Save new photo
-  const handleUpload = async (e) => {
-    e.preventDefault()
-    if (!title.trim() || !imageUrl.trim()) return
-    setUploading(true)
-    setToast({ message: '', type: '' })
 
-    const newPhoto = {
-      title: title.trim(),
-      year: Number(year),
-      image_url: imageUrl.trim(),
-      description: description.trim(),
-    }
-
-    if (isSupabaseConfigured()) {
-      try {
-        const { data, error } = await supabase
-          .from('media')
-          .insert(newPhoto)
-          .select()
-          .single()
-
-        if (error) throw error
-        setPhotos((prev) => [data, ...prev])
-        setToast({ message: 'Foto berhasil diunggah ke galeri!', type: 'success' })
-      } catch (err) {
-        setToast({ message: `Gagal mengunggah: ${err.message}`, type: 'error' })
-      } finally {
-        setUploading(false)
-      }
-    } else {
-      // Local storage fallback
-      const photoWithId = {
-        ...newPhoto,
-        id: 'local-' + Date.now(),
-      }
-      const updatedList = [photoWithId, ...photos]
-      setPhotos(updatedList)
-      localStorage.setItem('katar_media_photos', JSON.stringify(updatedList))
-      
-      setToast({ message: '(Demo) Foto berhasil disimpan secara lokal!', type: 'success' })
-      setUploading(false)
-    }
-
-    // Reset Form
-    setTitle('')
-    setImageUrl('')
-    setDescription('')
-  }
 
   // Available filters (computed dynamically from photo years)
   const uniqueYears = [...new Set(photos.map((p) => p.year))].sort((a, b) => b - a)
@@ -164,100 +107,7 @@ export default function MediaPage() {
           </p>
         </div>
 
-        {/* Admin upload trigger */}
-        {user && (
-          <button
-            onClick={() => setUploadOpen((prev) => !prev)}
-            className="btn btn-primary self-start md:self-auto min-h-[44px] flex items-center gap-2 shadow-md"
-          >
-            <Icon icon="solar:upload-bold" className="w-5 h-5 text-white" />
-            {uploadOpen ? 'Tutup Form' : 'Unggah Foto Baru'}
-          </button>
-        )}
       </div>
-
-      {/* ── Admin Upload Form ────────────────────────────────────── */}
-      {user && uploadOpen && (
-        <div className="card p-6 border-merah-200 border bg-white mb-8 transition-all max-w-2xl">
-          <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2 mb-4">
-            <Icon icon="solar:upload-bold" className="w-5 h-5 text-merah-600" />
-            Unggah Foto Baru
-          </h3>
-
-          {toast.message && (
-            <div
-              className={`p-3.5 rounded-xl border text-sm font-medium mb-4 flex items-center justify-between
-                          ${toast.type === 'success'
-                            ? 'bg-green-50 border-green-200 text-green-800'
-                            : 'bg-merah-50 border-merah-200 text-merah-800'
-                          }`}
-            >
-              <span>{toast.message}</span>
-              <button onClick={() => setToast({ message: '', type: '' })} className="ml-2">✕</button>
-            </div>
-          )}
-
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Foto</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: Juara Tarik Tambang"
-                  className="form-input"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tahun Kegiatan</label>
-                <select
-                  required
-                  className="form-select"
-                  value={year}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                >
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-abu-700 mb-1">URL Gambar</label>
-              <input
-                type="url"
-                required
-                placeholder="https://images.unsplash.com/... atau tautan gambar lainnya"
-                className="form-input"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-abu-700 mb-1">Keterangan / Deskripsi</label>
-              <textarea
-                placeholder="Tuliskan keterangan momen dalam foto tersebut secara singkat..."
-                className="form-input min-h-[80px] py-2"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={uploading}
-              className="btn btn-primary w-full sm:w-auto min-h-[44px] disabled:opacity-60"
-            >
-              {uploading ? 'Mengunggah...' : 'Simpan Foto'}
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* ── Year Filters ─────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2 mb-8">
