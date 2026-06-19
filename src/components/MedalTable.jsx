@@ -8,75 +8,6 @@ import { Icon } from '@iconify/react'
  * Pulls live data from Supabase when configured, otherwise shows demo data.
  */
 
-// ─── Demo / Fallback Data ─────────────────────────────────────
-const DEMO_YEARS = [2025, 2024]
-
-const DEMO_MEDALS = {
-  2025: {
-    'semua': [
-      { block: 'Gang 1', gold: 2, silver: 1, bronze: 0 },
-      { block: 'Gang 2', gold: 1, silver: 1, bronze: 1 },
-      { block: 'Gang 3', gold: 0, silver: 1, bronze: 2 },
-    ],
-    'anak-anak': [
-      { block: 'Gang 2', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 1, bronze: 0 },
-      { block: 'Gang 1', gold: 0, silver: 0, bronze: 1 },
-    ],
-    'remaja': [
-      { block: 'Gang 1', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 2', gold: 0, silver: 1, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 0, bronze: 1 },
-    ],
-    'bapak-bapak': [
-      { block: 'Gang 1', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 1, bronze: 0 },
-      { block: 'Gang 2', gold: 0, silver: 0, bronze: 1 },
-    ],
-    'ibu-ibu': [
-      { block: 'Gang 2', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 1', gold: 0, silver: 1, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 0, bronze: 1 },
-    ],
-    'segala-umur': [
-      { block: 'Gang 3', gold: 0, silver: 1, bronze: 1 },
-      { block: 'Gang 2', gold: 0, silver: 0, bronze: 1 },
-      { block: 'Gang 1', gold: 0, silver: 0, bronze: 0 },
-    ]
-  },
-  2024: {
-    'semua': [
-      { block: 'Gang 2', gold: 2, silver: 0, bronze: 1 },
-      { block: 'Gang 1', gold: 1, silver: 2, bronze: 0 },
-      { block: 'Gang 3', gold: 1, silver: 0, bronze: 1 },
-    ],
-    'anak-anak': [
-      { block: 'Gang 2', gold: 1, silver: 0, bronze: 1 },
-      { block: 'Gang 1', gold: 0, silver: 1, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 0, bronze: 1 },
-    ],
-    'remaja': [
-      { block: 'Gang 1', gold: 1, silver: 1, bronze: 0 },
-      { block: 'Gang 3', gold: 0, silver: 0, bronze: 1 },
-      { block: 'Gang 2', gold: 0, silver: 0, bronze: 0 },
-    ],
-    'bapak-bapak': [
-      { block: 'Gang 2', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 3', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 1', gold: 0, silver: 1, bronze: 0 },
-    ],
-    'ibu-ibu': [
-      { block: 'Gang 1', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 2', gold: 0, silver: 0, bronze: 1 },
-      { block: 'Gang 3', gold: 0, silver: 0, bronze: 0 },
-    ],
-    'segala-umur': [
-      { block: 'Gang 3', gold: 1, silver: 0, bronze: 0 },
-      { block: 'Gang 2', gold: 0, silver: 0, bronze: 1 },
-      { block: 'Gang 1', gold: 0, silver: 0, bronze: 0 },
-    ]
-  }
-}
 
 export default function MedalTable() {
   const [years, setYears] = useState([])
@@ -89,6 +20,7 @@ export default function MedalTable() {
   // ─── Fetch available years on mount ───────────────────────────
   useEffect(() => {
     async function fetchYears() {
+      setLoading(true)
       if (isSupabaseConfigured()) {
         try {
           const { data, error } = await supabase
@@ -96,20 +28,23 @@ export default function MedalTable() {
             .select('year_number')
             .order('year_number', { ascending: false })
 
-          if (!error && data?.length) {
+          if (!error && data) {
             const yearList = data.map((row) => row.year_number)
             setYears(yearList)
-            setSelectedYear(yearList[0]) // default to latest
+            if (yearList.length > 0) {
+              setSelectedYear(yearList[0]) // default to latest
+            }
+            setLoading(false)
             return
           }
         } catch (err) {
-          console.warn('MedalTable: Supabase years fetch failed, using demo data.', err)
+          console.warn('MedalTable: Supabase years fetch failed', err)
         }
       }
 
-      // Fallback to demo years
-      setYears(DEMO_YEARS)
-      setSelectedYear(DEMO_YEARS[0])
+      setYears([])
+      setSelectedYear(null)
+      setLoading(false)
     }
 
     fetchYears()
@@ -117,7 +52,11 @@ export default function MedalTable() {
 
   // ─── Fetch medal data when year/category changes ──────────────
   useEffect(() => {
-    if (selectedYear === null) return
+    if (selectedYear === null) {
+      setMedals([])
+      setLoading(false)
+      return
+    }
 
     async function fetchMedals() {
       setLoading(true)
@@ -188,20 +127,11 @@ export default function MedalTable() {
             return
           }
         } catch (err) {
-          console.warn('MedalTable: Supabase medals fetch failed, using demo data.', err)
+          console.warn('MedalTable: Supabase medals fetch failed', err)
         }
       }
 
-      // Fallback to demo data
-      const demoYear = DEMO_MEDALS[selectedYear] || {}
-      const demo = demoYear[selectedCategory] || []
-      // Sort demo data consistently
-      const sorted = [...demo].sort((a, b) => {
-        if (b.gold !== a.gold) return b.gold - a.gold
-        if (b.silver !== a.silver) return b.silver - a.silver
-        return b.bronze - a.bronze
-      })
-      setMedals(sorted)
+      setMedals([])
       setLoading(false)
     }
 

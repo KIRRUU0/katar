@@ -18,38 +18,6 @@ const parseImages = (imageUrl) => {
   return [imageUrl.trim()].filter(Boolean)
 }
 
-// ── Fallback Demo News ──────────────────────────────────────────
-const DEMO_NEWS = [
-  {
-    id: '1',
-    title: 'Rapat Perdana Panitia 17-an 2026',
-    description: 'Rapat koordinasi perdana panitia menyepakati rangkaian kompetisi kemerdekaan yang akan diselenggarakan mulai awal Agustus 2026. Seluruh perwakilan gang dari Blok A hingga Blok D turut hadir untuk menyusun teknis pelaksanaan dan anggaran dana.\n\nDalam rapat ini dibahas pembentukan seksi-seksi panitia, termasuk seksi perlombaan anak-anak, seksi dekorasi lingkungan, seksi konsumsi, serta seksi dokumentasi. Selain itu, panitia menyepakati penambahan perlombaan baru seperti estafet kelereng kelompok dan cerdas cermat kebangsaan demi memupuk semangat nasionalisme warga sejak usia dini.',
-    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200',
-    created_at: '2026-06-10T10:00:00',
-  },
-  {
-    id: '2',
-    title: 'Gotong Royong Bersihkan Lapangan',
-    description: 'Warga RT 03 bergotong royong membersihkan lapangan utama yang akan menjadi pusat arena perlombaan Semarak Agustus. Kegiatan ini dipimpin langsung oleh Ketua RT dan diikuti oleh bapak-bapak serta pemuda karang taruna.\n\nSelain memotong rumput liar dan membersihkan sampah, panitia juga mulai melakukan pengecatan garis lapangan futsal serta mempersiapkan tiang untuk lomba panjat pinang yang legendaris. Ibu-ibu warga RT 03 juga turut mendukung dengan menyediakan konsumsi berupa makanan tradisional dan minuman segar untuk menyemangati para warga yang bekerja bakti.',
-    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1200',
-    created_at: '2026-06-08T09:00:00',
-  },
-  {
-    id: '3',
-    title: 'Latihan Futsal Tim Gang 1',
-    description: 'Tim futsal perwakilan Gang 1 mengadakan sesi latihan intensif di lapangan utama untuk menghadapi laga pembuka Turnamen Futsal Antar Gang RT 03 yang dijadwalkan pada 3 Agustus 2026.\n\nLatihan dipimpin oleh kapten tim dengan fokus peningkatan stamina, kerja sama tim, dan strategi penyerangan. Antusiasme para pemain sangat tinggi, didukung oleh para warga Gang 1 yang datang langsung untuk menyaksikan jalannya latihan dari pinggir lapangan. Turnamen futsal tahun ini diprediksi akan berjalan sangat ketat karena masing-masing gang memiliki pemain-pemain andalan.',
-    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200',
-    created_at: '2026-06-05T16:00:00',
-  },
-  {
-    id: '4',
-    title: 'Dekorasi Merah Putih Dimulai',
-    description: 'Karang taruna bersama warga RT 03 mulai menghias jalan utama dengan bendera merah putih, umbul-umbul, dan lampu hias kelap-kelip bernuansa kemerdekaan untuk memeriahkan suasana lingkungan menjelang Agustus.\n\nSetiap gang dikoordinasikan untuk membuat dekorasi sekreatif mungkin karena akan ada penilaian khusus untuk dekorasi gang terbaik di malam puncak syukuran kemerdekaan. Langkah ini diharapkan dapat menumbuhkan kreativitas warga dan membuat suasana lingkungan RT 03 menjadi meriah, indah, dan penuh semangat nasionalisme.',
-    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=1200',
-    created_at: '2026-06-01T08:00:00',
-  },
-]
-
 export default function NewsDetailPage() {
   const { id } = useParams()
   const [article, setArticle] = useState(null)
@@ -116,21 +84,12 @@ export default function NewsDetailPage() {
         }
       }
 
-      // 3. Fallback to DEMO_NEWS
-      if (!found) {
-        found = DEMO_NEWS.find((item) => String(item.id) === String(id))
-      }
-
       const combinedOthers = [
         ...localNews.filter((item) => String(item.id) !== String(id)),
         ...supabaseNews
       ]
 
-      if (combinedOthers.length > 0) {
-        others = combinedOthers.slice(0, 3)
-      } else {
-        others = DEMO_NEWS.filter((item) => String(item.id) !== String(id)).slice(0, 3)
-      }
+      others = combinedOthers.slice(0, 3)
 
       setArticle(found || null)
       setOtherNews(others)

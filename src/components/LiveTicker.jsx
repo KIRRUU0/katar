@@ -33,7 +33,7 @@ export default function LiveTicker() {
           console.warn('Failed to parse local katar_announcements:', e)
         }
       }
-      setAnnouncements(DEMO_ANNOUNCEMENTS)
+      setAnnouncements([])
       return
     }
 
@@ -45,7 +45,7 @@ export default function LiveTicker() {
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
-      if (!error && data?.length) {
+      if (!error && data) {
         setAnnouncements(data.map((row) => row.message))
       } else {
         // Check local storage fallback first before demo data
@@ -62,7 +62,7 @@ export default function LiveTicker() {
             console.warn('Failed to parse local katar_announcements:', e)
           }
         }
-        setAnnouncements(DEMO_ANNOUNCEMENTS)
+        setAnnouncements([])
       }
     }
 

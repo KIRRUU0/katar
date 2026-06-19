@@ -29,36 +29,6 @@ const parseImages = (imageUrl) => {
  * - Card hover effects via .card class
  */
 
-const DEMO_NEWS = [
-  {
-    id: 1,
-    title: 'Rapat Perdana Panitia 17-an 2026',
-    description: 'Rapat koordinasi panitia untuk membahas susunan acara dan pembagian tugas lomba kemerdekaan.',
-    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=640',
-    created_at: '2026-06-10T10:00:00',
-  },
-  {
-    id: 2,
-    title: 'Gotong Royong Bersihkan Lapangan',
-    description: 'Warga RT 03 bersama-sama membersihkan lapangan untuk persiapan lomba 17 Agustus.',
-    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=640',
-    created_at: '2026-06-08T09:00:00',
-  },
-  {
-    id: 3,
-    title: 'Latihan Futsal Tim Gang 1',
-    description: 'Tim futsal Gang 1 berlatih keras menjelang turnamen antar gang RT 03.',
-    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=640',
-    created_at: '2026-06-05T16:00:00',
-  },
-  {
-    id: 4,
-    title: 'Dekorasi Merah Putih Dimulai',
-    description: 'Pemasangan bendera dan umbul-umbul di sepanjang jalan RT 03 sudah dimulai.',
-    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=640',
-    created_at: '2026-06-01T08:00:00',
-  },
-]
 
 /** Format a date string to a readable Indonesian locale date */
 const formatDate = (dateStr) => {
@@ -91,7 +61,7 @@ export default function NewsCarousel() {
             .select('*')
             .order('created_at', { ascending: false })
             .limit(10)
-          if (!error && data?.length) {
+          if (!error && data) {
             supabaseNews = data
           }
         } catch (err) {
@@ -114,7 +84,7 @@ export default function NewsCarousel() {
       if (combined.length > 0) {
         setNews(combined.slice(0, 3))
       } else {
-        setNews(DEMO_NEWS.slice(0, 3))
+        setNews([])
       }
     }
 

@@ -64,8 +64,8 @@ export default function LeaguePage() {
         }
       }
 
-      // Fallback to demo data only if Supabase not configured/fails
-      setTournaments(demoTournaments)
+      // Fallback to empty array
+      setTournaments([])
       setLoading(false)
     }
 

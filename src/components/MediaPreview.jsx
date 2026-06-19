@@ -19,36 +19,6 @@ const parseImages = (imageUrl) => {
   return [imageUrl.trim()].filter(Boolean)
 }
 
-const DEMO_PHOTOS = [
-  {
-    id: 'm1',
-    title: 'Gotong Royong Lapangan Gang 3',
-    year: 2025,
-    description: 'Warga bahu-membahu membersihkan dan menyiapkan area panggung kemerdekaan.',
-    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
-  },
-  {
-    id: 'm2',
-    title: 'Keseruan Balap Karung Anak-Anak',
-    year: 2025,
-    description: 'Tawa ceria anak-anak RT 03 beradu cepat di garis finish balap karung.',
-    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
-  },
-  {
-    id: 'm3',
-    title: 'Latihan Futsal Bersama',
-    year: 2025,
-    description: 'Sesi latihan pemuda karang taruna mempererat keakraban antar gang.',
-    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
-  },
-  {
-    id: 'm4',
-    title: 'Pemasangan Bendera Lingkungan',
-    year: 2024,
-    description: 'Kerja sama memasang umbul-umbul merah putih di sepanjang gang jalan utama.',
-    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=800',
-  },
-]
 
 export default function MediaPreview() {
   const [photos, setPhotos] = useState([])
@@ -65,7 +35,7 @@ export default function MediaPreview() {
             .select('*')
             .order('created_at', { ascending: false })
             .limit(10)
-          if (!error && data?.length) {
+          if (!error && data) {
             supabasePhotos = data
           }
         } catch (err) {
@@ -84,11 +54,7 @@ export default function MediaPreview() {
       }
 
       const combined = [...localPhotos, ...supabasePhotos]
-      if (combined.length > 0) {
-        setPhotos(combined.slice(0, 4))
-      } else {
-        setPhotos(DEMO_PHOTOS)
-      }
+      setPhotos(combined.slice(0, 4))
     }
 
     loadPhotos()

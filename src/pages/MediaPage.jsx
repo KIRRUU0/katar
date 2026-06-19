@@ -18,52 +18,6 @@ const parseImages = (imageUrl) => {
   return [imageUrl.trim()].filter(Boolean)
 }
 
-// ── Fallback Demo Photos ────────────────────────────────────────
-const DEMO_PHOTOS = [
-  {
-    id: 'm1',
-    title: 'Gotong Royong Lapangan Gang 3',
-    year: 2025,
-    description: 'Warga bahu-membahu membersihkan dan menyiapkan area panggung kemerdekaan.',
-    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
-  },
-  {
-    id: 'm2',
-    title: 'Keseruan Balap Karung Anak-Anak',
-    year: 2025,
-    description: 'Tawa ceria anak-anak RT 03 beradu cepat di garis finish balap karung.',
-    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
-  },
-  {
-    id: 'm3',
-    title: 'Latihan Futsal Bersama',
-    year: 2025,
-    description: 'Sesi latihan pemuda karang taruna mempererat keakraban antar gang.',
-    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
-  },
-  {
-    id: 'm4',
-    title: 'Pemasangan Bendera Lingkungan',
-    year: 2024,
-    description: 'Kerja sama memasang umbul-umbul merah putih di sepanjang gang jalan utama.',
-    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=800',
-  },
-  {
-    id: 'm5',
-    title: 'Malam Tirakatan & Doa Bersama',
-    year: 2024,
-    description: 'Malam penuh khidmat merenungkan jasa pahlawan diikuti seluruh warga RT 03.',
-    image_url: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800',
-  },
-  {
-    id: 'm6',
-    title: 'Pembagian Hadiah Juara Lomba',
-    year: 2024,
-    description: 'Momen penyerahan piala dan hadiah hiburan bagi para juara di panggung utama.',
-    image_url: 'https://images.unsplash.com/photo-1531058020387-3be344559be6?w=800',
-  },
-]
-
 export default function MediaPage() {
   const { user } = useAuth()
   const [photos, setPhotos] = useState([])
@@ -120,7 +74,7 @@ export default function MediaPage() {
       if (combined.length > 0 || hasSupabase) {
         setPhotos(combined)
       } else {
-        setPhotos(DEMO_PHOTOS)
+        setPhotos([])
       }
       setLoading(false)
     }

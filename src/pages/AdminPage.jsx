@@ -11,74 +11,7 @@ import { Icon } from '@iconify/react'
 
 // ─── Demo / fallback data when Supabase is not configured ────────
 const FALLBACK_YEARS = [2026, 2025, 2024]
-const DEMO_TOURNAMENTS = [
-  {
-    id: 'demo-1',
-    name: 'Lomba Balap Karung',
-    type: 'individu',
-    category: 'bapak_bapak',
-    year: 2026,
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-01T08:00:00+07:00',
-    pj: 'Hirzan Arziqi'
-  },
-  {
-    id: 'demo-2',
-    name: 'Lomba Tarik Tambang',
-    type: 'grup',
-    category: 'pasangan',
-    year: 2026,
-    status: 'belum',
-    location: 'Pos Ronda RT 03',
-    schedule: '2026-08-01T10:00:00+07:00',
-    pj: 'Ridho Ramadhani'
-  },
-  {
-    id: 'demo-3',
-    name: 'Lomba Panjat Pinang',
-    type: 'grup',
-    category: 'remaja_pria',
-    year: 2026,
-    status: 'belum',
-    location: 'Jalan Utama Depan Musholla',
-    schedule: '2026-08-02T09:00:00+07:00',
-    pj: 'Muhammad Haekal Arrafi'
-  },
-  {
-    id: 'demo-4',
-    name: 'Lomba Makan Kerupuk',
-    type: 'individu',
-    category: 'anak_7_12',
-    year: 2026,
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-02T14:00:00+07:00',
-    pj: 'Tri Dewi Setyawati'
-  },
-  {
-    id: 'demo-5',
-    name: 'Lomba 17an Anak: Estafet Kelereng',
-    type: 'individu',
-    category: 'anak_4_6',
-    year: 2026,
-    status: 'belum',
-    location: 'Gang 2',
-    schedule: '2026-08-03T08:00:00+07:00',
-    pj: 'Nadia Istifana'
-  },
-  {
-    id: 'demo-6',
-    name: 'Lomba Futsal Antar Gang',
-    type: 'grup',
-    category: 'remaja_pria',
-    year: 2026,
-    status: 'belum',
-    location: 'Lapangan Gang 3',
-    schedule: '2026-08-03T15:00:00+07:00',
-    pj: 'Bintang R Sinaga'
-  }
-]
+const DEMO_TOURNAMENTS = []
 
 const CATEGORIES = [
   { id: 'anak_4_6', name: 'Anak-Anak 4-6 Tahun', type: 'individu' },

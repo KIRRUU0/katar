@@ -18,37 +18,6 @@ const parseImages = (imageUrl) => {
   return [imageUrl.trim()].filter(Boolean)
 }
 
-const DEMO_NEWS = [
-  {
-    id: '1',
-    title: 'Rapat Perdana Panitia 17-an 2026',
-    description: 'Rapat koordinasi panitia menyepakati rangkaian kompetisi kemerdekaan yang akan diselenggarakan mulai awal Agustus 2026.',
-    image_url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=640',
-    created_at: '2026-06-10T10:00:00',
-  },
-  {
-    id: '2',
-    title: 'Gotong Royong Bersihkan Lapangan',
-    description: 'Warga RT 03 bergotong royong membersihkan lapangan utama yang akan menjadi pusat arena perlombaan Semarak Agustus.',
-    image_url: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=640',
-    created_at: '2026-06-08T09:00:00',
-  },
-  {
-    id: '3',
-    title: 'Latihan Futsal Tim Gang 1',
-    description: 'Tim futsal perwakilan Gang 1 mengadakan sesi latihan intensif di lapangan utama untuk turnamen antar gang.',
-    image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=640',
-    created_at: '2026-06-05T16:00:00',
-  },
-  {
-    id: '4',
-    title: 'Dekorasi Merah Putih Dimulai',
-    description: 'Karang taruna bersama warga RT 03 mulai menghias jalan utama dengan bendera merah putih dan umbul-umbul.',
-    image_url: 'https://images.unsplash.com/photo-1577401132921-cb39bb12c7e0?w=640',
-    created_at: '2026-06-01T08:00:00',
-  },
-]
-
 const formatDate = (dateStr) => {
   try {
     return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -100,7 +69,7 @@ export default function NewsListPage() {
       if (combined.length > 0 || hasSupabase) {
         setNews(combined)
       } else {
-        setNews(DEMO_NEWS)
+        setNews([])
       }
       setLoading(false)
     }
