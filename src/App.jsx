@@ -138,10 +138,9 @@ export default function App() {
                 {/* Social media icons */}
                 <div className="flex items-center gap-2">
                   {[
-                    { href: "https://instagram.com", icon: "ri:instagram-line", label: "Instagram" },
-                    { href: "https://youtube.com", icon: "ri:youtube-line", label: "YouTube" },
-                    { href: "https://wa.me/6281234567890", icon: "ri:whatsapp-line", label: "WhatsApp" },
-                    { href: "mailto:katar.iremda@rt0203.com", icon: "solar:letter-bold", label: "Email" }
+                    { href: "https://www.instagram.com/iremda_02/", icon: "ri:instagram-line", label: "Instagram" },
+                    { href: "https://wa.me/6285781300161", icon: "ri:whatsapp-line", label: "WhatsApp" },
+                    { href: "iremdaa0203@gmail.com", icon: "solar:letter-bold", label: "Email" }
                   ].map((social, idx) => (
                     <a 
                       key={idx}
