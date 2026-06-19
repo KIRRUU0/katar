@@ -134,18 +134,27 @@ export default function HomePage() {
         >
           <h1
             className="hero-title font-heading text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 md:mb-5 uppercase tracking-wide"
-            style={{ opacity: 0, color: '#FFFFFF', textShadow: '0 2px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.4)' }}
+            style={{ 
+              opacity: 0, 
+              color: '#FFFFFF', 
+              textShadow: '0 4px 20px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.6)' 
+            }}
           >
-            Selamat Datang<br />Karang Taruna RT 02/03
+            Selamat Datang<br />
+            <span className="text-white">Karang Taruna </span>
+            <span className="text-emas drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)]">RT 02/03</span>
           </h1>
 
           <p
-            className="hero-welcome text-sm md:text-lg lg:text-xl font-medium mb-6 md:mb-8 max-w-2xl leading-relaxed"
-            style={{ opacity: 0, color: 'rgba(255,255,255,0.95)', textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}
+            className="hero-welcome text-sm md:text-lg lg:text-xl font-normal mb-6 md:mb-8 max-w-3xl leading-relaxed text-white/85"
+            style={{ 
+              opacity: 0, 
+              textShadow: '0 2px 10px rgba(0,0,0,0.7)' 
+            }}
           >
-            Wadah kolaborasi, komunikasi, dan kompetisi pemuda-pemudi RT 02/03.
+            Wadah <span className="font-semibold text-white">kolaborasi, komunikasi, dan kompetisi</span> pemuda-pemudi <span className="font-semibold text-emas">RT 02/03</span>.
             <br className="hidden md:inline" />
-            {' '}Bersama menyemarakkan HUT Kemerdekaan Republik Indonesia melalui sportivitas dan kreativitas tanpa batas!
+            {' '}Bersama menyemarakkan <span className="font-semibold text-white">HUT Kemerdekaan Republik Indonesia</span> melalui sportivitas dan kreativitas tanpa batas!
           </p>
 
           {/* CTA Buttons — Berita & Organisasi */}

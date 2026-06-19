@@ -109,7 +109,7 @@ export default function MediaPreview() {
 
       {photos.length === 0 ? (
         <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
-          tidak ada media atau data
+          tidak ada media atau gambar disini
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-0">

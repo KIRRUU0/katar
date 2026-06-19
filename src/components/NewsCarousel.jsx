@@ -140,7 +140,7 @@ export default function NewsCarousel() {
 
       {news.length === 0 ? (
         <div className="text-center py-10 text-abu-500 font-medium border border-dashed border-abu-200 rounded-2xl bg-abu-50/50 mx-4 md:mx-0">
-          tidak ada media atau data
+          tidak ada berita atau data disini
         </div>
       ) : (
         /* ── Grid card row ─────────────────────────── */
