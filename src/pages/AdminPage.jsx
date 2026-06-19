@@ -54,9 +54,35 @@ const uploadImage = async (file) => {
       })
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: publicUrlData, error: publicUrlError } = supabase.storage
       .from('katar-images')
       .getPublicUrl(filePath)
+
+    if (publicUrlError) {
+      console.warn('Supabase storage public URL failed, trying signed URL:', publicUrlError)
+    }
+
+    let publicUrl = publicUrlData?.publicUrl || publicUrlData?.data?.publicUrl
+    if (publicUrl && publicUrl.includes('/storage/v1/object/') && !publicUrl.includes('/storage/v1/object/public/')) {
+      publicUrl = publicUrl.replace('/storage/v1/object/', '/storage/v1/object/public/')
+    }
+
+    if (!publicUrl) {
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('katar-images')
+        .createSignedUrl(filePath, 3600)
+
+      if (signedError || !signedData?.signedUrl) {
+        console.warn('Supabase signed URL failed, falling back to base64:', signedError)
+        return new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.readAsDataURL(file)
+        })
+      }
+
+      publicUrl = signedData.signedUrl
+    }
 
     return publicUrl
   } catch (err) {
@@ -75,17 +101,12 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    // 1. Matches /d/FILE_ID
-    const dMatch = url.match(/\/d\/([a-zA-Z0-9_-]{25,})/i)
-    if (dMatch && dMatch[1]) {
-      return `https://lh3.googleusercontent.com/d/${dMatch[1]}`
+    const trimmed = url.trim()
+    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`
     }
-    // 2. Matches id=FILE_ID query parameter
-    const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]{25,})/i)
-    if (idMatch && idMatch[1]) {
-      return `https://lh3.googleusercontent.com/d/${idMatch[1]}`
-    }
-    return url
+    return trimmed
   }
 
   let urls = []
@@ -159,6 +180,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
+    if (!window.confirm("Yakin ingin menyimpan data ini?")) return;
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -276,6 +298,7 @@ function FormBuatLomba({ onTournamentAdded }) {
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
   const handleSubmit = async (e) => {
+    if (!window.confirm("Yakin ingin menyimpan data ini?")) return;
     e.preventDefault()
     setLoading(true)
     setToast({ message: '', type: '' })
@@ -734,6 +757,7 @@ function FormInputPeserta({ tournaments }) {
 
   // ── Edit Submit ──
   const handleUpdate = async (e) => {
+    if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     e.preventDefault()
     if (!editName.trim()) return
     setLoading(true)
@@ -1159,7 +1183,7 @@ function FormInputPeserta({ tournaments }) {
       {/* Edit Modal */}
       {editingItem && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in">
+          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
                 <Icon icon="solar:pen-bold" className="w-5 h-5 text-white" />
@@ -1173,7 +1197,7 @@ function FormInputPeserta({ tournaments }) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-6 space-y-4">
+            <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div>
                 <label className="block text-sm font-semibold text-abu-700 mb-1">
                   Nama {isIndividu ? 'Peserta' : 'Tim'}
@@ -1458,11 +1482,12 @@ function FormKunciPemenang({ tournaments, onTournamentUpdated }) {
 // ═════════════════════════════════════════════════════════════════
 //  SECTION 4 — Form Posting Berita Baru
 // ═════════════════════════════════════════════════════════════════
-function FormKelolaBerita() {
+function FormKelolaBerita({ onNewsAdded }) {
   const [form, setForm] = useState({
     title: '',
     description: '',
     imageUrl: '',
+    date: new Date().toISOString().split('T')[0],
   })
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -1479,6 +1504,7 @@ function FormKelolaBerita() {
     title: '',
     description: '',
     imageUrl: '',
+    date: '',
   })
   const [editUploading, setEditUploading] = useState(false)
   const [tempGalleryInput, setTempGalleryInput] = useState('')
@@ -1486,6 +1512,52 @@ function FormKelolaBerita() {
   const [lightboxUrl, setLightboxUrl] = useState(null)
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
+
+  const handleReorderImage = (idx, direction) => {
+    const urls = parseImages(form.imageUrl)
+    if (direction === 'left' && idx > 0) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx - 1]
+      urls[idx - 1] = temp
+    } else if (direction === 'right' && idx < urls.length - 1) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx + 1]
+      urls[idx + 1] = temp
+    }
+    updateField('imageUrl', urls.length > 0 ? JSON.stringify(urls) : '')
+  }
+
+  const handleDragDropImage = (draggedIdx, targetIdx) => {
+    if (draggedIdx === targetIdx) return
+    const urls = parseImages(form.imageUrl)
+    const draggedItem = urls[draggedIdx]
+    const remaining = urls.filter((_, i) => i !== draggedIdx)
+    remaining.splice(targetIdx, 0, draggedItem)
+    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+  }
+
+  const handleEditReorderImage = (idx, direction) => {
+    const urls = parseImages(editForm.imageUrl)
+    if (direction === 'left' && idx > 0) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx - 1]
+      urls[idx - 1] = temp
+    } else if (direction === 'right' && idx < urls.length - 1) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx + 1]
+      urls[idx + 1] = temp
+    }
+    setEditForm(prev => ({ ...prev, imageUrl: urls.length > 0 ? JSON.stringify(urls) : '' }))
+  }
+
+  const handleEditDragDropImage = (draggedIdx, targetIdx) => {
+    if (draggedIdx === targetIdx) return
+    const urls = parseImages(editForm.imageUrl)
+    const draggedItem = urls[draggedIdx]
+    const remaining = urls.filter((_, i) => i !== draggedIdx)
+    remaining.splice(targetIdx, 0, draggedItem)
+    setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+  }
 
   const fetchNews = useCallback(async () => {
     setFetchingList(true)
@@ -1543,6 +1615,7 @@ function FormKelolaBerita() {
   }
 
   const handleSubmit = async (e) => {
+    if (!window.confirm("Yakin ingin menyimpan data ini?")) return;
     e.preventDefault()
     if (!form.title.trim() || !form.imageUrl.trim()) return
     setLoading(true)
@@ -1552,15 +1625,17 @@ function FormKelolaBerita() {
       title: form.title.trim(),
       description: form.description.trim(),
       image_url: form.imageUrl.trim(),
+      date: form.date,
     }
 
     try {
       if (isSupabaseConfigured()) {
         const { error } = await supabase.from('news').insert(newNews)
         if (error) throw error
+
         setToast({ message: `Berita "${form.title}" berhasil diposting!`, type: 'success' })
       } else {
-        // Fallback local storage
+        // Fallback local storage - News only
         const newsWithId = {
           ...newNews,
           id: 'local-news-' + Date.now(),
@@ -1568,10 +1643,12 @@ function FormKelolaBerita() {
         }
         const updatedList = [newsWithId, ...newsList]
         localStorage.setItem('katar_news_articles', JSON.stringify(updatedList))
-        setToast({ message: `(Demo) Berita "${form.title}" berhasil disimpan secara lokal!`, type: 'success' })
+
+        setToast({ message: `Berita "${form.title}" berhasil disimpan!`, type: 'success' })
       }
-      setForm({ title: '', description: '', imageUrl: '' })
+      setForm({ title: '', description: '', imageUrl: '', date: new Date().toISOString().split('T')[0] })
       fetchNews()
+      onNewsAdded?.()
     } catch (err) {
       setToast({ message: `Gagal memposting berita: ${err.message}`, type: 'error' })
     } finally {
@@ -1606,6 +1683,7 @@ function FormKelolaBerita() {
       title: item.title,
       description: item.description || '',
       imageUrl: item.image_url || '',
+      date: item.date ? item.date.split('T')[0] : (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
     })
   }
 
@@ -1632,6 +1710,7 @@ function FormKelolaBerita() {
   }
 
   const handleUpdate = async (e) => {
+    if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     e.preventDefault()
     if (!editForm.title.trim() || !editForm.imageUrl.trim()) return
     setLoading(true)
@@ -1643,6 +1722,7 @@ function FormKelolaBerita() {
             title: editForm.title.trim(),
             description: editForm.description.trim(),
             image_url: editForm.imageUrl.trim(),
+            date: editForm.date,
           })
           .eq('id', editForm.id)
         if (error) throw error
@@ -1652,6 +1732,7 @@ function FormKelolaBerita() {
           title: editForm.title.trim(),
           description: editForm.description.trim(),
           image_url: editForm.imageUrl.trim(),
+          date: editForm.date,
         } : n)
         localStorage.setItem('katar_news_articles', JSON.stringify(updatedList))
       }
@@ -1675,24 +1756,36 @@ function FormKelolaBerita() {
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Berita</label>
-          <input
-            type="text"
-            required
-            className="form-input focus-ring text-sm"
-            placeholder="Contoh: Pembukaan Turnamen Futsal RT 02/03"
-            value={form.title}
-            onChange={(e) => updateField('title', e.target.value)}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Berita</label>
+            <input
+              type="text"
+              required
+              className="form-input focus-ring text-sm"
+              placeholder="Contoh: Pembukaan Turnamen Futsal RT 02/03"
+              value={form.title}
+              onChange={(e) => updateField('title', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-abu-700 mb-1">Tanggal Kegiatan</label>
+            <input
+              type="date"
+              required
+              className="form-input focus-ring text-sm"
+              value={form.date}
+              onChange={(e) => updateField('date', e.target.value)}
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview)</label>
           <input
             type="text"
             className="form-input focus-ring text-sm"
-            placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
+            placeholder="Tempel (Paste) URL gambar di sini"
             value={tempGalleryInput}
             onChange={(e) => setTempGalleryInput(e.target.value)}
             onKeyDown={(e) => {
@@ -1756,31 +1849,68 @@ function FormKelolaBerita() {
 
         {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
           <div className="space-y-1.5 pt-2">
-            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar)</span>
+            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar) - Seret gambar atau gunakan panah untuk mengatur urutan</span>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
               {parseImages(form.imageUrl).map((url, idx) => (
-                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                <div
+                  key={idx}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', idx.toString())
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                  }}
+                  onDrop={(e) => {
+                    const draggedIdx = Number(e.dataTransfer.getData('text/plain'))
+                    handleDragDropImage(draggedIdx, idx)
+                  }}
+                  className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50 cursor-move transition-all duration-200 hover:border-abu-400"
+                >
                   <img
                     src={url}
                     alt={`Preview ${idx + 1}`}
-                    className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                    className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-200"
                     onClick={() => setLightboxUrl(url)}
-                    onError={(e) => {
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { console.error('Img load error for URL:', e.target.src.substring(0, 100)); console.error('Img load error for URL:', url.substring(0, 100));
                       e.target.onerror = null;
                       e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
                     }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                      updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                    }}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                    title="Hapus"
-                  >
-                    ✕
-                  </button>
+                  <div className="absolute top-1 right-1 flex items-center gap-1 z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+                    {idx > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleReorderImage(idx, 'left')}
+                        className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                        title="Geser Kiri"
+                      >
+                        ←
+                      </button>
+                    )}
+                    {idx < parseImages(form.imageUrl).length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleReorderImage(idx, 'right')}
+                        className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                        title="Geser Kanan"
+                      >
+                        →
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                        updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                      }}
+                      className="w-5.5 h-5.5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                      title="Hapus"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1791,7 +1921,7 @@ function FormKelolaBerita() {
           <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi Kegiatan</label>
           <textarea
             required
-            className="form-input focus-ring min-h-[120px] py-2 text-sm"
+            className="form-input focus-ring min-h-[250px] py-3 text-sm resize-y leading-relaxed"
             placeholder="Tuliskan berita lengkap..."
             value={form.description}
             onChange={(e) => updateField('description', e.target.value)}
@@ -1836,6 +1966,7 @@ function FormKelolaBerita() {
                           src={parseImages(item.image_url)[0]}
                           alt=""
                           className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          referrerPolicy="no-referrer"
                           onClick={() => {
                             const imgUrl = parseImages(item.image_url)[0]
                             if (imgUrl) setLightboxUrl(imgUrl)
@@ -1845,7 +1976,7 @@ function FormKelolaBerita() {
                     </td>
                     <td className="p-3 font-semibold text-abu-900">{item.title}</td>
                     <td className="p-3 text-abu-500">
-                      {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'}
+                      {item.date ? new Date(item.date).toLocaleDateString('id-ID') : (item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-')}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -1876,7 +2007,7 @@ function FormKelolaBerita() {
       {/* Edit Modal */}
       {editingNews && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in">
+          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
                 <Icon icon="solar:pen-bold" className="w-5 h-5 text-white" />
@@ -1891,24 +2022,36 @@ function FormKelolaBerita() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Berita</label>
-                <input
-                  type="text"
-                  required
-                  className="form-input focus-ring text-sm"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
-                />
+            <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Berita</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input focus-ring text-sm"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Tanggal Kegiatan</label>
+                  <input
+                    type="date"
+                    required
+                    className="form-input focus-ring text-sm"
+                    value={editForm.date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, date: e.target.value }))}
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview)</label>
                 <input
                   type="text"
                   className="form-input focus-ring text-sm"
-                  placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
+                  placeholder="Tempel (Paste) URL gambar di sini"
                   value={tempEditGalleryInput}
                   onChange={(e) => setTempEditGalleryInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -1972,31 +2115,68 @@ function FormKelolaBerita() {
 
               {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
                 <div className="space-y-1.5 pt-2">
-                  <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar)</span>
+                  <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar) - Seret gambar atau gunakan panah untuk mengatur urutan</span>
                   <div className="grid grid-cols-3 gap-2.5">
                     {parseImages(editForm.imageUrl).map((url, idx) => (
-                      <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                      <div
+                        key={idx}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', idx.toString())
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                        }}
+                        onDrop={(e) => {
+                          const draggedIdx = Number(e.dataTransfer.getData('text/plain'))
+                          handleEditDragDropImage(draggedIdx, idx)
+                        }}
+                        className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50 cursor-move transition-all duration-200 hover:border-abu-400"
+                      >
                         <img
                           src={url}
                           alt={`Preview ${idx + 1}`}
-                          className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-200"
                           onClick={() => setLightboxUrl(url)}
-                          onError={(e) => {
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { console.error('Img load error for URL:', e.target.src.substring(0, 100)); console.error('Img load error for URL:', url.substring(0, 100));
                             e.target.onerror = null;
                             e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
                           }}
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
-                            setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
-                          }}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                          title="Hapus"
-                        >
-                          ✕
-                        </button>
+                        <div className="absolute top-1 right-1 flex items-center gap-1 z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleEditReorderImage(idx, 'left')}
+                              className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                              title="Geser Kiri"
+                            >
+                              ←
+                            </button>
+                          )}
+                          {idx < parseImages(editForm.imageUrl).length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleEditReorderImage(idx, 'right')}
+                              className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                              title="Geser Kanan"
+                            >
+                              →
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
+                              setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+                            }}
+                            className="w-5.5 h-5.5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                            title="Hapus"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -2007,7 +2187,7 @@ function FormKelolaBerita() {
                 <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi</label>
                 <textarea
                   required
-                  className="form-input focus-ring min-h-[120px] py-2 text-sm"
+                  className="form-input focus-ring min-h-[250px] py-3 text-sm resize-y leading-relaxed"
                   value={editForm.description}
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                 />
@@ -2045,16 +2225,17 @@ function FormKelolaBerita() {
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center">
             <button
               onClick={() => setLightboxUrl(null)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold cursor-pointer transition-colors focus-ring"
+              className="absolute -top-12 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-abu-800 hover:bg-merah-600 text-white cursor-pointer transition-all border border-abu-700 shadow-md focus-ring"
               title="Tutup"
             >
-              ✕
+              <Icon icon="solar:close-circle-bold" className="w-5.5 h-5.5" />
             </button>
             <img 
               src={lightboxUrl} 
               alt="Preview Full" 
               className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
+              referrerPolicy="no-referrer"
             />
             <div className="mt-4 text-white/80 text-sm break-all text-center px-4 bg-black/40 py-2 rounded-lg max-w-full">
               {lightboxUrl}
@@ -2074,6 +2255,7 @@ function FormKelolaMedia({ onMediaAdded }) {
   const [form, setForm] = useState({
     title: '',
     year: new Date().getFullYear(),
+    date: new Date().toISOString().split('T')[0],
     imageUrl: '',
     description: '',
   })
@@ -2091,6 +2273,7 @@ function FormKelolaMedia({ onMediaAdded }) {
     id: '',
     title: '',
     year: new Date().getFullYear(),
+    date: '',
     imageUrl: '',
     description: '',
   })
@@ -2100,6 +2283,52 @@ function FormKelolaMedia({ onMediaAdded }) {
   const [lightboxUrl, setLightboxUrl] = useState(null)
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
+
+  const handleReorderImage = (idx, direction) => {
+    const urls = parseImages(form.imageUrl)
+    if (direction === 'left' && idx > 0) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx - 1]
+      urls[idx - 1] = temp
+    } else if (direction === 'right' && idx < urls.length - 1) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx + 1]
+      urls[idx + 1] = temp
+    }
+    updateField('imageUrl', urls.length > 0 ? JSON.stringify(urls) : '')
+  }
+
+  const handleDragDropImage = (draggedIdx, targetIdx) => {
+    if (draggedIdx === targetIdx) return
+    const urls = parseImages(form.imageUrl)
+    const draggedItem = urls[draggedIdx]
+    const remaining = urls.filter((_, i) => i !== draggedIdx)
+    remaining.splice(targetIdx, 0, draggedItem)
+    updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+  }
+
+  const handleEditReorderImage = (idx, direction) => {
+    const urls = parseImages(editForm.imageUrl)
+    if (direction === 'left' && idx > 0) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx - 1]
+      urls[idx - 1] = temp
+    } else if (direction === 'right' && idx < urls.length - 1) {
+      const temp = urls[idx]
+      urls[idx] = urls[idx + 1]
+      urls[idx + 1] = temp
+    }
+    setEditForm(prev => ({ ...prev, imageUrl: urls.length > 0 ? JSON.stringify(urls) : '' }))
+  }
+
+  const handleEditDragDropImage = (draggedIdx, targetIdx) => {
+    if (draggedIdx === targetIdx) return
+    const urls = parseImages(editForm.imageUrl)
+    const draggedItem = urls[draggedIdx]
+    const remaining = urls.filter((_, i) => i !== draggedIdx)
+    remaining.splice(targetIdx, 0, draggedItem)
+    setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+  }
 
   const fetchMedia = useCallback(async () => {
     setFetchingList(true)
@@ -2157,6 +2386,7 @@ function FormKelolaMedia({ onMediaAdded }) {
   }
 
   const handleSubmit = async (e) => {
+    if (!window.confirm("Yakin ingin menyimpan data ini?")) return;
     e.preventDefault()
     if (!form.title.trim() || !form.imageUrl.trim()) return
     setLoading(true)
@@ -2165,6 +2395,7 @@ function FormKelolaMedia({ onMediaAdded }) {
     const newPhoto = {
       title: form.title.trim(),
       year: Number(form.year),
+      date: form.date,
       image_url: form.imageUrl.trim(),
       description: form.description.trim(),
     }
@@ -2185,7 +2416,7 @@ function FormKelolaMedia({ onMediaAdded }) {
         localStorage.setItem('katar_media_photos', JSON.stringify(updatedList))
         setToast({ message: `(Demo) Foto "${form.title}" berhasil disimpan secara lokal!`, type: 'success' })
       }
-      setForm({ title: '', year: new Date().getFullYear(), imageUrl: '', description: '' })
+      setForm({ title: '', year: new Date().getFullYear(), date: new Date().toISOString().split('T')[0], imageUrl: '', description: '' })
       fetchMedia()
       onMediaAdded?.()
     } catch (err) {
@@ -2222,6 +2453,7 @@ function FormKelolaMedia({ onMediaAdded }) {
       id: item.id,
       title: item.title,
       year: item.year,
+      date: item.date ? item.date.split('T')[0] : (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
       imageUrl: item.image_url || '',
       description: item.description || '',
     })
@@ -2250,6 +2482,7 @@ function FormKelolaMedia({ onMediaAdded }) {
   }
 
   const handleUpdate = async (e) => {
+    if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     e.preventDefault()
     if (!editForm.title.trim() || !editForm.imageUrl.trim()) return
     setLoading(true)
@@ -2260,6 +2493,7 @@ function FormKelolaMedia({ onMediaAdded }) {
           .update({
             title: editForm.title.trim(),
             year: Number(editForm.year),
+            date: editForm.date,
             image_url: editForm.imageUrl.trim(),
             description: editForm.description.trim(),
           })
@@ -2270,6 +2504,7 @@ function FormKelolaMedia({ onMediaAdded }) {
           ...m,
           title: editForm.title.trim(),
           year: Number(editForm.year),
+          date: editForm.date,
           image_url: editForm.imageUrl.trim(),
           description: editForm.description.trim(),
         } : m)
@@ -2296,7 +2531,7 @@ function FormKelolaMedia({ onMediaAdded }) {
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Foto</label>
             <input
@@ -2309,27 +2544,30 @@ function FormKelolaMedia({ onMediaAdded }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-abu-700 mb-1">Tahun Kegiatan</label>
-            <select
-              className="form-select focus-ring text-sm"
-              value={form.year}
-              onChange={(e) => updateField('year', Number(e.target.value))}
+            <label className="block text-sm font-semibold text-abu-700 mb-1">Tanggal Kegiatan</label>
+            <input
+              type="date"
               required
-            >
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-            </select>
+              className="form-input focus-ring text-sm"
+              value={form.date}
+              onChange={(e) => {
+                const dateVal = e.target.value
+                updateField('date', dateVal)
+                if (dateVal) {
+                  const extractedYear = new Date(dateVal).getFullYear()
+                  updateField('year', extractedYear)
+                }
+              }}
+            />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview)</label>
           <input
             type="text"
             className="form-input focus-ring text-sm"
-            placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
+            placeholder="Tempel (Paste) URL gambar di sini"
             value={tempGalleryInput}
             onChange={(e) => setTempGalleryInput(e.target.value)}
             onKeyDown={(e) => {
@@ -2393,31 +2631,68 @@ function FormKelolaMedia({ onMediaAdded }) {
 
         {form.imageUrl && parseImages(form.imageUrl).length > 0 && (
           <div className="space-y-1.5 pt-2">
-            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar)</span>
+            <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(form.imageUrl).length} Gambar) - Seret gambar atau gunakan panah untuk mengatur urutan</span>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
               {parseImages(form.imageUrl).map((url, idx) => (
-                <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                <div
+                  key={idx}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', idx.toString())
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                  }}
+                  onDrop={(e) => {
+                    const draggedIdx = Number(e.dataTransfer.getData('text/plain'))
+                    handleDragDropImage(draggedIdx, idx)
+                  }}
+                  className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50 cursor-move transition-all duration-200 hover:border-abu-400"
+                >
                   <img
                     src={url}
                     alt={`Preview ${idx + 1}`}
-                    className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                    className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-200"
                     onClick={() => setLightboxUrl(url)}
-                    onError={(e) => {
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { console.error('Img load error for URL:', e.target.src.substring(0, 100)); console.error('Img load error for URL:', url.substring(0, 100));
                       e.target.onerror = null;
                       e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
                     }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
-                      updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
-                    }}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                    title="Hapus"
-                  >
-                    ✕
-                  </button>
+                  <div className="absolute top-1 right-1 flex items-center gap-1 z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+                    {idx > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => handleReorderImage(idx, 'left')}
+                        className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                        title="Geser Kiri"
+                      >
+                        ←
+                      </button>
+                    )}
+                    {idx < parseImages(form.imageUrl).length - 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleReorderImage(idx, 'right')}
+                        className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                        title="Geser Kanan"
+                      >
+                        →
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const remaining = parseImages(form.imageUrl).filter((_, i) => i !== idx)
+                        updateField('imageUrl', remaining.length > 0 ? JSON.stringify(remaining) : '')
+                      }}
+                      className="w-5.5 h-5.5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                      title="Hapus"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2458,7 +2733,7 @@ function FormKelolaMedia({ onMediaAdded }) {
                   <th className="p-3 text-center w-12">No.</th>
                   <th className="p-3">Foto</th>
                   <th className="p-3">Judul Foto</th>
-                  <th className="p-3">Tahun</th>
+                  <th className="p-3">Tanggal / Tahun</th>
                   <th className="p-3">Keterangan</th>
                   <th className="p-3 text-center w-28">Aksi</th>
                 </tr>
@@ -2473,6 +2748,7 @@ function FormKelolaMedia({ onMediaAdded }) {
                           src={parseImages(item.image_url)[0]}
                           alt=""
                           className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          referrerPolicy="no-referrer"
                           onClick={() => {
                             const imgUrl = parseImages(item.image_url)[0]
                             if (imgUrl) setLightboxUrl(imgUrl)
@@ -2481,7 +2757,9 @@ function FormKelolaMedia({ onMediaAdded }) {
                       </div>
                     </td>
                     <td className="p-3 font-semibold text-abu-900">{item.title}</td>
-                    <td className="p-3 text-abu-600 font-medium">{item.year}</td>
+                    <td className="p-3 text-abu-600 font-medium">
+                      {item.date ? new Date(item.date).toLocaleDateString('id-ID') : item.year}
+                    </td>
                     <td className="p-3 text-abu-500 max-w-xs truncate">{item.description || '-'}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -2512,7 +2790,7 @@ function FormKelolaMedia({ onMediaAdded }) {
       {/* Edit Modal */}
       {editingMedia && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in">
+          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
                 <Icon icon="solar:pen-bold" className="w-5 h-5 text-white" />
@@ -2527,8 +2805,8 @@ function FormKelolaMedia({ onMediaAdded }) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-abu-700 mb-1">Judul Foto</label>
                   <input
@@ -2540,27 +2818,41 @@ function FormKelolaMedia({ onMediaAdded }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-abu-700 mb-1">Tahun Kegiatan</label>
-                  <select
-                    className="form-select focus-ring text-sm"
-                    value={editForm.year}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, year: Number(e.target.value) }))}
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Tanggal</label>
+                  <input
+                    type="date"
                     required
-                  >
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                  </select>
+                    className="form-input focus-ring text-sm"
+                    value={editForm.date}
+                    onChange={(e) => {
+                      const dateVal = e.target.value
+                      setEditForm(prev => {
+                        const updated = { ...prev, date: dateVal }
+                        if (dateVal) {
+                          updated.year = new Date(dateVal).getFullYear()
+                        }
+                        return updated
+                      })
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Tahun</label>
+                  <input
+                    type="number"
+                    className="form-input focus-ring text-sm bg-abu-50 text-abu-500 cursor-not-allowed"
+                    value={editForm.year}
+                    readOnly
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview saat ditempel/paste)</label>
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar (Otomatis masuk preview)</label>
                 <input
                   type="text"
                   className="form-input focus-ring text-sm"
-                  placeholder="Tempel (Paste) URL gambar di sini (bisa Google Drive / URL lainnya) atau ketik lalu tekan Enter"
+                  placeholder="Tempel (Paste) URL gambar di sini"
                   value={tempEditGalleryInput}
                   onChange={(e) => setTempEditGalleryInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -2622,31 +2914,68 @@ function FormKelolaMedia({ onMediaAdded }) {
 
                   {editForm.imageUrl && parseImages(editForm.imageUrl).length > 0 && (
                     <div className="space-y-1.5 pt-2">
-                      <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar)</span>
+                      <span className="block text-xs font-bold text-abu-400 uppercase tracking-wider">Preview Galeri ({parseImages(editForm.imageUrl).length} Gambar) - Seret gambar atau gunakan panah untuk mengatur urutan</span>
                       <div className="grid grid-cols-3 gap-2.5">
                         {parseImages(editForm.imageUrl).map((url, idx) => (
-                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
+                          <div
+                            key={idx}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('text/plain', idx.toString())
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault()
+                            }}
+                            onDrop={(e) => {
+                              const draggedIdx = Number(e.dataTransfer.getData('text/plain'))
+                              handleEditDragDropImage(draggedIdx, idx)
+                            }}
+                            className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50 cursor-move transition-all duration-200 hover:border-abu-400"
+                          >
                             <img
                               src={url}
                               alt={`Preview ${idx + 1}`}
-                              className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                              className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform duration-200"
                               onClick={() => setLightboxUrl(url)}
-                              onError={(e) => {
+                              referrerPolicy="no-referrer"
+                              onError={(e) => { console.error('Img load error for URL:', e.target.src.substring(0, 100)); console.error('Img load error for URL:', url.substring(0, 100));
                                 e.target.onerror = null;
                                 e.target.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f1f5f9'/><text x='50%' y='40%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='8' font-weight='bold' fill='%23ef4444'>Gambar Gagal Load</text><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='6.5' fill='%2364748b'>Link Privat / Tidak Valid</text></svg>";
                               }}
                             />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
-                                setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
-                              }}
-                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-xs z-20"
-                              title="Hapus"
-                            >
-                              ✕
-                            </button>
+                            <div className="absolute top-1 right-1 flex items-center gap-1 z-20 opacity-90 group-hover:opacity-100 transition-opacity">
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditReorderImage(idx, 'left')}
+                                  className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                                  title="Geser Kiri"
+                                >
+                                  ←
+                                </button>
+                              )}
+                              {idx < parseImages(editForm.imageUrl).length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditReorderImage(idx, 'right')}
+                                  className="w-5.5 h-5.5 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                                  title="Geser Kanan"
+                                >
+                                  →
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const remaining = parseImages(editForm.imageUrl).filter((_, i) => i !== idx)
+                                  setEditForm(prev => ({ ...prev, imageUrl: remaining.length > 0 ? JSON.stringify(remaining) : '' }))
+                                }}
+                                className="w-5.5 h-5.5 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-extrabold shadow"
+                                title="Hapus"
+                              >
+                                ✕
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -2696,16 +3025,17 @@ function FormKelolaMedia({ onMediaAdded }) {
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center">
             <button
               onClick={() => setLightboxUrl(null)}
-              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold cursor-pointer transition-colors focus-ring"
+              className="absolute -top-12 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-abu-800 hover:bg-merah-600 text-white cursor-pointer transition-all border border-abu-700 shadow-md focus-ring"
               title="Tutup"
             >
-              ✕
+              <Icon icon="solar:close-circle-bold" className="w-5.5 h-5.5" />
             </button>
             <img 
               src={lightboxUrl} 
               alt="Preview Full" 
               className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/10"
               onClick={(e) => e.stopPropagation()}
+              referrerPolicy="no-referrer"
             />
             <div className="mt-4 text-white/80 text-sm break-all text-center px-4 bg-black/40 py-2 rounded-lg max-w-full">
               {lightboxUrl}
@@ -2790,6 +3120,7 @@ function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
   }
 
   const handleUpdate = async (e) => {
+    if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     e.preventDefault()
     setLoading(true)
     setToast({ message: '', type: '' })
@@ -2969,7 +3300,7 @@ function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
       {/* Edit Modal */}
       {editingTournament && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in">
+          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
                 <Icon icon="solar:pen-bold" className="w-5 h-5 text-white" />
@@ -2983,7 +3314,7 @@ function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-6 space-y-4">
+            <form onSubmit={handleUpdate} className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               <div>
                 <label className="block text-sm font-semibold text-abu-700 mb-1">Nama Lomba</label>
                 <input
@@ -3112,13 +3443,14 @@ function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
 function FormKelolaOrganisasi() {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })
+  const [orgYear, setOrgYear] = useState(2026)
   
   // Core roles states
   const [coreNames, setCoreNames] = useState({
-    rt: 'Bapak Abdul Mukmin',
-    katar: 'Ridho Ramadhani',
-    sekretaris: 'Tri Dewi Setyawati',
-    bendahara: 'Bintang R Sinaga',
+    rt: '',
+    katar: '',
+    sekretaris: '',
+    bendahara: '',
   })
   
   // Core role photos states
@@ -3147,8 +3479,8 @@ function FormKelolaOrganisasi() {
             .from('organization')
             .select('*')
           
-          if (!error && resData && resData.length > 0) {
-            data = resData
+          if (!error) {
+            data = resData || []
             isFetched = true
           } else if (error) {
             console.warn('Supabase organization query failed, falling back to local storage:', error.message)
@@ -3158,10 +3490,14 @@ function FormKelolaOrganisasi() {
         }
       }
 
-      if (isFetched && data) {
+      if (isFetched && data && data.length > 0) {
+        // Dynamically get the year from database rows
+        const yearVal = data[0]?.year || 2026
+        setOrgYear(yearVal)
+
         // Parse core roles and photos
-        const cores = { ...coreNames }
-        const imgs = { ...coreImages }
+        const cores = { rt: '', katar: '', sekretaris: '', bendahara: '' }
+        const imgs = { rt: '', katar: '', sekretaris: '', bendahara: '' }
         data.forEach(item => {
           if (['rt', 'katar', 'sekretaris', 'bendahara'].includes(item.role_key)) {
             cores[item.role_key] = item.name
@@ -3179,8 +3515,11 @@ function FormKelolaOrganisasi() {
         const localOrg = localStorage.getItem('katar_organization')
         if (localOrg) {
           const parsed = JSON.parse(localOrg)
-          const cores = { ...coreNames }
-          const imgs = { ...coreImages }
+          const yearVal = parsed[0]?.year || 2026
+          setOrgYear(yearVal)
+
+          const cores = { rt: '', katar: '', sekretaris: '', bendahara: '' }
+          const imgs = { rt: '', katar: '', sekretaris: '', bendahara: '' }
           parsed.forEach(item => {
             if (['rt', 'katar', 'sekretaris', 'bendahara'].includes(item.role_key)) {
               cores[item.role_key] = item.name
@@ -3193,28 +3532,20 @@ function FormKelolaOrganisasi() {
           const mems = parsed.filter(item => item.role_key === 'member').sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
           setMembers(mems)
         } else {
-          // If no localStorage, initialize with default members from OrgPage
-          const defaultMembers = [
-            'Muhammad Haekal Arrafi', 'Hirzan Arziqi', 'Rizq Ahmad Pratama', 'Muhamad Rifai',
-            'Syazkiya Alifah An Nur', 'Nadia Istifana', 'Mutiara Fatharani Nurdiana', 'Kenzi Alfaruq',
-            'Tri Dewi Setyawati', 'Cakra Aditia', 'Syakira Harisma Putri', 'Siti Aisyah', 'Hadiil Alwan',
-            'Fatia Isnaini Yulman', 'Muhammad Rizki Arifi', 'Syifa Auliya Ilmi', 'Muhamad Iqbal',
-            'Ning Fauziah Pratiwi', 'Bunga Reyfan Ramadhani',
-          ].map((name, idx) => ({
-            id: 'demo-mem-' + idx,
-            role_key: 'member',
-            role_name: 'Anggota',
-            name,
-            display_order: idx + 1
-          }))
-          setMembers(defaultMembers)
-          
-          // Seed default demo images
+          // Default initialization (empty)
+          setOrgYear(2026)
+          setMembers([])
+          setCoreNames({
+            rt: '',
+            katar: '',
+            sekretaris: '',
+            bendahara: '',
+          })
           setCoreImages({
-            rt: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400',
-            katar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400',
-            sekretaris: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
-            bendahara: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+            rt: '',
+            katar: '',
+            sekretaris: '',
+            bendahara: '',
           })
         }
       }
@@ -3252,35 +3583,34 @@ function FormKelolaOrganisasi() {
     setToast({ message: '', type: '' })
     try {
       const payload = [
-        { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt, image_url: coreImages.rt || null, display_order: 0 },
-        { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar, image_url: coreImages.katar || null, display_order: 0 },
-        { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris, image_url: coreImages.sekretaris || null, display_order: 0 },
-        { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara, image_url: coreImages.bendahara || null, display_order: 0 },
+        { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt, image_url: coreImages.rt || null, display_order: 0, year: orgYear },
+        { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar, image_url: coreImages.katar || null, display_order: 0, year: orgYear },
+        { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris, image_url: coreImages.sekretaris || null, display_order: 0, year: orgYear },
+        { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara, image_url: coreImages.bendahara || null, display_order: 0, year: orgYear },
       ]
 
       if (isSupabaseConfigured()) {
-        for (const role of payload) {
-          const { data: existing, error: checkError } = await supabase
-            .from('organization')
-            .select('id')
-            .eq('role_key', role.role_key)
-            .maybeSingle()
-          
-          if (checkError) throw checkError
+        // Delete all existing core roles first to prevent unique constraint conflicts
+        const { error: deleteError } = await supabase
+          .from('organization')
+          .delete()
+          .in('role_key', ['rt', 'katar', 'sekretaris', 'bendahara'])
+        
+        if (deleteError) throw deleteError
 
-          if (existing) {
-            const { error: updateError } = await supabase
-              .from('organization')
-              .update({ name: role.name, image_url: role.image_url })
-              .eq('id', existing.id)
-            if (updateError) throw updateError
-          } else {
-            const { error: insertError } = await supabase
-              .from('organization')
-              .insert(role)
-            if (insertError) throw insertError
-          }
-        }
+        // Insert the new core roles
+        const { error: insertError } = await supabase
+          .from('organization')
+          .insert(payload)
+        
+        if (insertError) throw insertError
+        
+        // Also update all members' year so they stay in sync
+        const { error: memberYearError } = await supabase
+          .from('organization')
+          .update({ year: orgYear })
+          .eq('role_key', 'member')
+        if (memberYearError) throw memberYearError
       } else {
         // Save locally
         const localOrg = localStorage.getItem('katar_organization')
@@ -3288,7 +3618,7 @@ function FormKelolaOrganisasi() {
         if (localOrg) {
           parsed = JSON.parse(localOrg).filter(item => item.role_key === 'member')
         }
-        const combined = [...payload.map((p, idx) => ({ ...p, id: 'demo-core-' + idx })), ...parsed]
+        const combined = [...payload.map((p, idx) => ({ ...p, id: 'demo-core-' + idx })), ...parsed].map(item => ({ ...item, year: orgYear }))
         localStorage.setItem('katar_organization', JSON.stringify(combined))
       }
       setToast({ message: 'Struktur pengurus inti berhasil disimpan!', type: 'success' })
@@ -3311,7 +3641,8 @@ function FormKelolaOrganisasi() {
         role_key: 'member',
         role_name: 'Anggota',
         name: newMemberName.trim(),
-        display_order: nextOrder
+        display_order: nextOrder,
+        year: orgYear,
       }
 
       if (isSupabaseConfigured()) {
@@ -3328,10 +3659,10 @@ function FormKelolaOrganisasi() {
         } else {
           // Initialize defaults
           parsed = [
-            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt },
-            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar },
-            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris },
-            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara },
+            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt, year: orgYear },
+            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar, year: orgYear },
+            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris, year: orgYear },
+            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara, year: orgYear },
             ...members
           ]
         }
@@ -3376,10 +3707,10 @@ function FormKelolaOrganisasi() {
         } else {
           const updatedMems = members.map(m => m.id === editingMember.id ? { ...m, name: editMemberName.trim() } : m)
           const payload = [
-            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt },
-            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar },
-            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris },
-            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara },
+            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt, year: orgYear },
+            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar, year: orgYear },
+            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris, year: orgYear },
+            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara, year: orgYear },
             ...updatedMems
           ]
           localStorage.setItem('katar_organization', JSON.stringify(payload))
@@ -3414,10 +3745,10 @@ function FormKelolaOrganisasi() {
         } else {
           const updatedMems = members.filter(item => item.id !== m.id)
           const payload = [
-            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt },
-            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar },
-            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris },
-            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara },
+            { role_key: 'rt', role_name: 'Pelindung / Ketua RT', name: coreNames.rt, year: orgYear },
+            { role_key: 'katar', role_name: 'Ketua Karang Taruna', name: coreNames.katar, year: orgYear },
+            { role_key: 'sekretaris', role_name: 'Sekretaris', name: coreNames.sekretaris, year: orgYear },
+            { role_key: 'bendahara', role_name: 'Bendahara', name: coreNames.bendahara, year: orgYear },
             ...updatedMems
           ]
           localStorage.setItem('katar_organization', JSON.stringify(payload))
@@ -3443,6 +3774,19 @@ function FormKelolaOrganisasi() {
         <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
 
         <form onSubmit={saveCoreRoles} className="space-y-6">
+          {/* Tahun Kepengurusan Field */}
+          <div className="bg-abu-50/50 p-4 rounded-xl border border-abu-200 space-y-2 max-w-xs">
+            <label className="block text-sm font-semibold text-abu-700">Tahun Kepengurusan</label>
+            <input
+              type="number"
+              required
+              className="form-input focus-ring text-sm"
+              placeholder="Contoh: 2026"
+              value={orgYear}
+              onChange={(e) => setOrgYear(Number(e.target.value))}
+            />
+            <span className="text-[11px] text-abu-500 block">Mengubah tahun ini akan otomatis memperbarui periode kepengurusan yang ditampilkan ke user.</span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Pelindung / Ketua RT */}
             <div className="bg-abu-50/50 p-4 rounded-xl border border-abu-200 space-y-3">
@@ -3450,7 +3794,7 @@ function FormKelolaOrganisasi() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border border-abu-200 bg-white flex-shrink-0 flex items-center justify-center shadow-sm">
                   {coreImages.rt ? (
-                    <img src={coreImages.rt} alt="Pelindung / Ketua RT" className="w-full h-full object-cover" />
+                    <img src={coreImages.rt} alt="Pelindung / Ketua RT" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <Icon icon="solar:user-bold" className="w-7 h-7 text-abu-400" />
                   )}
@@ -3499,7 +3843,7 @@ function FormKelolaOrganisasi() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border border-abu-200 bg-white flex-shrink-0 flex items-center justify-center shadow-sm">
                   {coreImages.katar ? (
-                    <img src={coreImages.katar} alt="Ketua Karang Taruna" className="w-full h-full object-cover" />
+                    <img src={coreImages.katar} alt="Ketua Karang Taruna" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <Icon icon="solar:crown-minimalistic-bold" className="w-7 h-7 text-abu-400" />
                   )}
@@ -3548,7 +3892,7 @@ function FormKelolaOrganisasi() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border border-abu-200 bg-white flex-shrink-0 flex items-center justify-center shadow-sm">
                   {coreImages.sekretaris ? (
-                    <img src={coreImages.sekretaris} alt="Sekretaris" className="w-full h-full object-cover" />
+                    <img src={coreImages.sekretaris} alt="Sekretaris" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <Icon icon="solar:document-text-bold" className="w-7 h-7 text-abu-400" />
                   )}
@@ -3597,7 +3941,7 @@ function FormKelolaOrganisasi() {
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full overflow-hidden border border-abu-200 bg-white flex-shrink-0 flex items-center justify-center shadow-sm">
                   {coreImages.bendahara ? (
-                    <img src={coreImages.bendahara} alt="Bendahara" className="w-full h-full object-cover" />
+                    <img src={coreImages.bendahara} alt="Bendahara" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
                     <Icon icon="solar:wallet-money-bold" className="w-7 h-7 text-abu-400" />
                   )}
@@ -3721,7 +4065,7 @@ function FormKelolaOrganisasi() {
 
       {editingMember && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in">
+          <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
                 <Icon icon="solar:pen-bold" className="w-5 h-5 text-white" />
@@ -4534,7 +4878,7 @@ export default function AdminPage() {
 
         {activeTab === 'news-media' && (
           <div className="space-y-6">
-            <FormKelolaBerita />
+            <FormKelolaBerita onNewsAdded={handleMediaAdded} />
             <FormKelolaMedia onMediaAdded={handleMediaAdded} />
           </div>
         )}

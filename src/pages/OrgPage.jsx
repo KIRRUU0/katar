@@ -10,17 +10,17 @@ import { Icon } from '@iconify/react'
 
 const DEFAULT_ORG = {
   rt: {
-    role: 'Pelindung / Ketua RT',
-    name: 'Bapak Abdul Mukmin',
-    image_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400',
+    role: 'Ketua RT',
+    name: '',
+    image_url: '',
     icon: 'solar:user-bold-duotone',
     color: 'border-amber-500 bg-amber-50 text-amber-950',
     iconColor: 'text-amber-600',
   },
   katar: {
     role: 'Ketua Karang Taruna',
-    name: 'Ridho Ramadhani',
-    image_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400',
+    name: '',
+    image_url: '',
     icon: 'solar:crown-minimalistic-bold-duotone',
     color: 'border-merah-650 bg-merah-50 text-merah-950',
     iconColor: 'text-merah-600',
@@ -28,42 +28,22 @@ const DEFAULT_ORG = {
   core: [
     {
       role: 'Sekretaris',
-      name: 'Tri Dewi Setyawati',
-      image_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
+      name: '',
+      image_url: '',
       icon: 'solar:document-text-bold-duotone',
       color: 'border-blue-500 bg-blue-50 text-blue-950',
       iconColor: 'text-blue-600',
     },
     {
       role: 'Bendahara',
-      name: 'Bintang R Sinaga',
-      image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      name: '',
+      image_url: '',
       icon: 'solar:wallet-money-bold-duotone',
       color: 'border-emerald-500 bg-emerald-50 text-emerald-950',
       iconColor: 'text-emerald-600',
     },
   ],
-  members: [
-    'Muhammad Haekal Arrafi',
-    'Hirzan Arziqi',
-    'Rizq Ahmad Pratama',
-    'Muhamad Rifai',
-    'Syazkiya Alifah An Nur',
-    'Nadia Istifana',
-    'Mutiara Fatharani Nurdiana',
-    'Kenzi Alfaruq',
-    'Tri Dewi Setyawati',
-    'Cakra Aditia',
-    'Syakira Harisma Putri',
-    'Siti Aisyah',
-    'Hadiil Alwan',
-    'Fatia Isnaini Yulman',
-    'Muhammad Rizki Arifi',
-    'Syifa Auliya Ilmi',
-    'Muhamad Iqbal',
-    'Ning Fauziah Pratiwi',
-    'Bunga Reyfan Ramadhani',
-  ]
+  members: []
 }
 
 const mapRowsToStructure = (rows) => {
@@ -75,17 +55,17 @@ const mapRowsToStructure = (rows) => {
 
   return {
     rt: {
-      role: 'Pelindung / Ketua RT',
-      name: rtRow ? rtRow.name : 'Bapak Abdul Mukmin',
-      image_url: rtRow ? rtRow.image_url : 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400',
+      role: 'Ketua RT',
+      name: rtRow ? rtRow.name : '',
+      image_url: rtRow ? rtRow.image_url : '',
       icon: 'solar:user-bold-duotone',
       color: 'border-amber-500 bg-amber-50 text-amber-950',
       iconColor: 'text-amber-600',
     },
     katar: {
       role: 'Ketua Karang Taruna',
-      name: katarRow ? katarRow.name : 'Ridho Ramadhani',
-      image_url: katarRow ? katarRow.image_url : 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400',
+      name: katarRow ? katarRow.name : '',
+      image_url: katarRow ? katarRow.image_url : '',
       icon: 'solar:crown-minimalistic-bold-duotone',
       color: 'border-merah-650 bg-merah-50 text-merah-950',
       iconColor: 'text-merah-600',
@@ -93,59 +73,69 @@ const mapRowsToStructure = (rows) => {
     core: [
       {
         role: 'Sekretaris',
-        name: sekretarisRow ? sekretarisRow.name : 'Tri Dewi Setyawati',
-        image_url: sekretarisRow ? sekretarisRow.image_url : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400',
+        name: sekretarisRow ? sekretarisRow.name : '',
+        image_url: sekretarisRow ? sekretarisRow.image_url : '',
         icon: 'solar:document-text-bold-duotone',
         color: 'border-blue-500 bg-blue-50 text-blue-950',
         iconColor: 'text-blue-600',
       },
       {
         role: 'Bendahara',
-        name: bendaharaRow ? bendaharaRow.name : 'Bintang R Sinaga',
-        image_url: bendaharaRow ? bendaharaRow.image_url : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+        name: bendaharaRow ? bendaharaRow.name : '',
+        image_url: bendaharaRow ? bendaharaRow.image_url : '',
         icon: 'solar:wallet-money-bold-duotone',
         color: 'border-emerald-500 bg-emerald-50 text-emerald-950',
         iconColor: 'text-emerald-600',
       },
     ],
-    members: memberRows.length > 0 ? memberRows.map(r => r.name) : DEFAULT_ORG.members
+    members: memberRows.map(r => r.name)
   }
 }
 
 export default function OrgPage() {
+  const [activeYear, setActiveYear] = useState(2026)
   const [structure, setStructure] = useState(DEFAULT_ORG)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchOrg() {
       try {
+        let rows = []
         if (isSupabaseConfigured()) {
           const { data, error } = await supabase
             .from('organization')
             .select('*')
           
           if (!error && data && data.length > 0) {
-            setStructure(mapRowsToStructure(data))
-            setLoading(false)
-            return
+            rows = data
           }
         }
         
-        // Local fallback
-        const localOrg = localStorage.getItem('katar_organization')
-        if (localOrg) {
-          const parsed = JSON.parse(localOrg)
-          if (parsed && parsed.length > 0) {
-            setStructure(mapRowsToStructure(parsed))
-            setLoading(false)
-            return
+        if (rows.length === 0) {
+          // Local fallback
+          const localOrg = localStorage.getItem('katar_organization')
+          if (localOrg) {
+            const parsed = JSON.parse(localOrg)
+            if (parsed && parsed.length > 0) {
+              rows = parsed
+            }
           }
         }
+
+        if (rows.length > 0) {
+          const yearVal = rows[0]?.year || 2026
+          setActiveYear(yearVal)
+          setStructure(mapRowsToStructure(rows))
+        } else {
+          setActiveYear(2026)
+          setStructure(DEFAULT_ORG)
+        }
       } catch (err) {
-        console.warn('Failed to load org data, using default:', err)
+        console.error('Error loading org structure:', err)
+        setStructure(DEFAULT_ORG)
+      } finally {
+        setLoading(false)
       }
-      setStructure(DEFAULT_ORG)
-      setLoading(false)
     }
     fetchOrg()
   }, [])
@@ -233,7 +223,7 @@ export default function OrgPage() {
 
         {/* Subtle Pill for Period */}
         <div className="inline-block bg-merah-50/70 border border-merah-200 text-merah-700 font-bold text-xs px-4 py-1.5 rounded-full mt-3 shadow-sm uppercase tracking-wider">
-          Periode 2026/2028
+          Periode {activeYear}/{activeYear + 3}
         </div>
       </div>
 
@@ -245,7 +235,7 @@ export default function OrgPage() {
           <div className={`card w-64 p-4 border-2 text-center shadow-md ${structure.rt.color} transition-transform hover:scale-[1.02]`}>
             <div className="w-16 h-16 rounded-full overflow-hidden bg-white flex items-center justify-center mx-auto mb-2 border border-abu-200 shadow-sm">
               {structure.rt.image_url ? (
-                <img src={structure.rt.image_url} alt={structure.rt.name} className="w-full h-full object-cover" />
+                <img src={structure.rt.image_url} alt={structure.rt.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
                 <Icon icon={structure.rt.icon} className={`w-7 h-7 ${structure.rt.iconColor}`} />
               )}
@@ -263,7 +253,7 @@ export default function OrgPage() {
           <div className={`card w-64 p-5 border-2 text-center shadow-md ${structure.katar.color} transition-transform hover:scale-[1.02]`}>
             <div className="w-20 h-20 rounded-full overflow-hidden bg-white flex items-center justify-center mx-auto mb-2.5 border border-abu-200 shadow-sm">
               {structure.katar.image_url ? (
-                <img src={structure.katar.image_url} alt={structure.katar.name} className="w-full h-full object-cover" />
+                <img src={structure.katar.image_url} alt={structure.katar.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
                 <Icon icon={structure.katar.icon} className={`w-9 h-9 ${structure.katar.iconColor} animate-pulse`} />
               )}
@@ -289,7 +279,7 @@ export default function OrgPage() {
                 <div className={`card w-full p-4 border text-center shadow-sm ${node.color} transition-transform hover:scale-[1.01]`}>
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-white flex items-center justify-center mx-auto mb-2 border border-abu-150 shadow-sm">
                     {node.image_url ? (
-                      <img src={node.image_url} alt={node.name} className="w-full h-full object-cover" />
+                      <img src={node.image_url} alt={node.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <Icon icon={node.icon} className={`w-7 h-7 ${node.iconColor}`} />
                     )}

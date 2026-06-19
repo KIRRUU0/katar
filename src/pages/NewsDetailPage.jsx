@@ -8,12 +8,12 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
-    const match = url.match(driveRegex)
+    const trimmed = url.trim()
+    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
       return `https://lh3.googleusercontent.com/d/${match[1]}`
     }
-    return url
+    return trimmed
   }
 
   let urls = []
@@ -38,6 +38,18 @@ export default function NewsDetailPage() {
   const [otherNews, setOtherNews] = useState([])
   const [loading, setLoading] = useState(true)
   const [activePhotoUrl, setActivePhotoUrl] = useState(null)
+
+  // Toggle body class to hide LiveTicker and disable scroll when lightbox is open
+  useEffect(() => {
+    if (activePhotoUrl) {
+      document.body.classList.add('lightbox-open')
+    } else {
+      document.body.classList.remove('lightbox-open')
+    }
+    return () => {
+      document.body.classList.remove('lightbox-open')
+    }
+  }, [activePhotoUrl])
 
   // Format date
   const formatDate = (dateStr) => {
@@ -206,6 +218,7 @@ export default function NewsDetailPage() {
               src={parseImages(article.image_url)[0]}
               alt={article.title}
               className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
           </div>
@@ -217,7 +230,7 @@ export default function NewsDetailPage() {
               Kegiatan Karang Taruna
             </span>
             <time className="text-sm text-abu-400 font-medium ml-2">
-              {formatDate(article.created_at)}
+              {formatDate(article.date || article.created_at)}
             </time>
           </div>
 
@@ -238,14 +251,14 @@ export default function NewsDetailPage() {
                 <Icon icon="solar:gallery-bold-duotone" className="w-5 h-5 text-merah-600" />
                 Galeri Foto Terkait
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-abu-300 scrollbar-track-abu-100">
                 {parseImages(article.image_url).map((img, idx) => (
                   <div 
                     key={idx} 
                     onClick={() => setActivePhotoUrl(img)}
-                    className="relative h-28 sm:h-36 rounded-xl overflow-hidden shadow-sm group cursor-pointer hover:shadow-md transition-shadow bg-abu-50"
+                    className="relative snap-start min-w-[180px] sm:min-w-[220px] h-28 sm:h-36 rounded-xl overflow-hidden shadow-sm group cursor-pointer hover:shadow-md transition-shadow bg-abu-50 flex-shrink-0"
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" referrerPolicy="no-referrer" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   </div>
                 ))}
@@ -274,6 +287,7 @@ export default function NewsDetailPage() {
                     src={parseImages(item.image_url)[0]}
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    referrerPolicy="no-referrer"
                   />
                 </div>
                 {/* Text info */}
@@ -298,15 +312,17 @@ export default function NewsDetailPage() {
         >
           <button
             onClick={() => setActivePhotoUrl(null)}
-            className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors text-lg cursor-pointer"
+            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-abu-800 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-abu-700"
+            aria-label="Tutup"
           >
-            ✕
+            <Icon icon="solar:close-circle-bold" className="w-6 h-6" />
           </button>
           <img
             src={activePhotoUrl}
             alt=""
             className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl animate-fade-in"
             onClick={(e) => e.stopPropagation()}
+            referrerPolicy="no-referrer"
           />
         </div>
       )}

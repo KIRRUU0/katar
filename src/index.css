@@ -222,6 +222,11 @@ h1, h2, h3, h4, h5, h6 {
   50% { opacity: 0.7; }
 }
 
+/* Hide marquee when lightbox/modal is open */
+body.lightbox-open [role="marquee"] {
+  display: none !important;
+}
+
 /* Gold highlight row for Juara Umum */
 .gold-row {
   background: linear-gradient(90deg, var(--color-emas-light) 0%, #FEF3C7 50%, var(--color-emas-light) 100%);

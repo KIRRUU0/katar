@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS news (
   title TEXT NOT NULL,
   description TEXT,
   image_url TEXT,
+  date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -93,6 +94,7 @@ CREATE TABLE IF NOT EXISTS media (
   year INTEGER NOT NULL,
   description TEXT,
   image_url TEXT NOT NULL,
+  date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -265,11 +267,12 @@ CREATE TABLE IF NOT EXISTS organization (
   name TEXT NOT NULL,
   image_url TEXT,
   display_order INTEGER DEFAULT 0,
+  year INTEGER DEFAULT 2026,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Partial unique index to ensure at most one active record for each core executive role
-CREATE UNIQUE INDEX IF NOT EXISTS organization_core_role_key_idx ON organization (role_key) WHERE role_key != 'member';
+-- Partial unique index to ensure at most one active record for each core executive role per year
+CREATE UNIQUE INDEX IF NOT EXISTS organization_core_role_key_year_idx ON organization (role_key, year) WHERE role_key != 'member';
 
 -- Enable RLS
 ALTER TABLE organization ENABLE ROW LEVEL SECURITY;
@@ -284,29 +287,29 @@ CREATE POLICY "Admin delete organization" ON organization FOR DELETE TO authenti
 ALTER PUBLICATION supabase_realtime ADD TABLE organization;
 
 -- Seed Organization Data
-INSERT INTO organization (role_key, role_name, name, image_url, display_order) VALUES
-  ('rt', 'Pelindung / Ketua RT', 'Bapak Abdul Mukmin', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400', 0),
-  ('katar', 'Ketua Karang Taruna', 'Ridho Ramadhani', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400', 0),
-  ('sekretaris', 'Sekretaris', 'Tri Dewi Setyawati', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400', 0),
-  ('bendahara', 'Bendahara', 'Bintang R Sinaga', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', 0),
-  ('member', 'Anggota', 'Muhammad Haekal Arrafi', null, 1),
-  ('member', 'Anggota', 'Hirzan Arziqi', null, 2),
-  ('member', 'Anggota', 'Rizq Ahmad Pratama', null, 3),
-  ('member', 'Anggota', 'Muhamad Rifai', null, 4),
-  ('member', 'Anggota', 'Syazkiya Alifah An Nur', null, 5),
-  ('member', 'Anggota', 'Nadia Istifana', null, 6),
-  ('member', 'Anggota', 'Mutiara Fatharani Nurdiana', null, 7),
-  ('member', 'Anggota', 'Kenzi Alfaruq', null, 8),
-  ('member', 'Anggota', 'Tri Dewi Setyawati', null, 9),
-  ('member', 'Anggota', 'Cakra Aditia', null, 10),
-  ('member', 'Anggota', 'Syakira Harisma Putri', null, 11),
-  ('member', 'Anggota', 'Siti Aisyah', null, 12),
-  ('member', 'Anggota', 'Hadiil Alwan', null, 13),
-  ('member', 'Anggota', 'Fatia Isnaini Yulman', null, 14),
-  ('member', 'Anggota', 'Muhammad Rizki Arifi', null, 15),
-  ('member', 'Anggota', 'Syifa Auliya Ilmi', null, 16),
-  ('member', 'Anggota', 'Muhamad Iqbal', null, 17),
-  ('member', 'Anggota', 'Ning Fauziah Pratiwi', null, 18),
-  ('member', 'Anggota', 'Bunga Reyfan Ramadhani', null, 19);
+INSERT INTO organization (role_key, role_name, name, image_url, display_order, year) VALUES
+  ('rt', 'Pelindung / Ketua RT', 'Bapak Abdul Mukmin', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400', 0, 2026),
+  ('katar', 'Ketua Karang Taruna', 'Ridho Ramadhani', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400', 0, 2026),
+  ('sekretaris', 'Sekretaris', 'Tri Dewi Setyawati', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400', 0, 2026),
+  ('bendahara', 'Bendahara', 'Bintang R Sinaga', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400', 0, 2026),
+  ('member', 'Anggota', 'Muhammad Haekal Arrafi', null, 1, 2026),
+  ('member', 'Anggota', 'Hirzan Arziqi', null, 2, 2026),
+  ('member', 'Anggota', 'Rizq Ahmad Pratama', null, 3, 2026),
+  ('member', 'Anggota', 'Muhamad Rifai', null, 4, 2026),
+  ('member', 'Anggota', 'Syazkiya Alifah An Nur', null, 5, 2026),
+  ('member', 'Anggota', 'Nadia Istifana', null, 6, 2026),
+  ('member', 'Anggota', 'Mutiara Fatharani Nurdiana', null, 7, 2026),
+  ('member', 'Anggota', 'Kenzi Alfaruq', null, 8, 2026),
+  ('member', 'Anggota', 'Tri Dewi Setyawati', null, 9, 2026),
+  ('member', 'Anggota', 'Cakra Aditia', null, 10, 2026),
+  ('member', 'Anggota', 'Syakira Harisma Putri', null, 11, 2026),
+  ('member', 'Anggota', 'Siti Aisyah', null, 12, 2026),
+  ('member', 'Anggota', 'Hadiil Alwan', null, 13, 2026),
+  ('member', 'Anggota', 'Fatia Isnaini Yulman', null, 14, 2026),
+  ('member', 'Anggota', 'Muhammad Rizki Arifi', null, 15, 2026),
+  ('member', 'Anggota', 'Syifa Auliya Ilmi', null, 16, 2026),
+  ('member', 'Anggota', 'Muhamad Iqbal', null, 17, 2026),
+  ('member', 'Anggota', 'Ning Fauziah Pratiwi', null, 18, 2026),
+  ('member', 'Anggota', 'Bunga Reyfan Ramadhani', null, 19, 2026);
 
 

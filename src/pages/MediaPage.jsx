@@ -8,12 +8,12 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
-    const match = url.match(driveRegex)
+    const trimmed = url.trim()
+    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
       return `https://lh3.googleusercontent.com/d/${match[1]}`
     }
-    return url
+    return trimmed
   }
 
   let urls = []
@@ -42,25 +42,65 @@ export default function MediaPage() {
   const [lightboxPhotosList, setLightboxPhotosList] = useState([])
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
+  // Toggle body class to hide LiveTicker and disable scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxIndex >= 0) {
+      document.body.classList.add('lightbox-open')
+    } else {
+      document.body.classList.remove('lightbox-open')
+    }
+    return () => {
+      document.body.classList.remove('lightbox-open')
+    }
+  }, [lightboxIndex])
+
+  const formatDate = (dateStr) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    } catch {
+      return ''
+    }
+  }
+
   // Load photos
   useEffect(() => {
     async function loadPhotos() {
       setLoading(true)
       let supabasePhotos = []
       let hasSupabase = false
+      const newsImageUrls = new Set()
+
       if (isSupabaseConfigured()) {
         try {
-          const { data, error } = await supabase
+          // Fetch media entries only
+          const { data: mediaData, error: mediaError } = await supabase
             .from('media')
             .select('*')
             .order('created_at', { ascending: false })
 
-          if (!error) {
-            supabasePhotos = data || []
+          if (!mediaError) {
+            supabasePhotos = mediaData || []
             hasSupabase = true
           }
+
+          // Load news image URLs to avoid showing older auto-synced news items in media
+          const { data: newsData, error: newsError } = await supabase
+            .from('news')
+            .select('image_url')
+          if (!newsError && newsData) {
+            newsData.forEach((n) => {
+              const urls = parseImages(n.image_url)
+              urls.forEach((url) => {
+                if (url) newsImageUrls.add(url.trim())
+              })
+            })
+          }
         } catch (err) {
-          console.warn('MediaPage: Supabase query failed, falling back to demo photos', err)
+          console.warn('MediaPage: Supabase query failed', err)
         }
       }
 
@@ -75,9 +115,45 @@ export default function MediaPage() {
         }
       }
 
-      const combined = [...localPhotos, ...supabasePhotos]
-      if (combined.length > 0 || hasSupabase) {
-        setPhotos(combined)
+      // Also collect local news image URLs to prevent local auto-sync duplicates
+      const localNewsData = localStorage.getItem('katar_news_articles')
+      if (localNewsData) {
+        try {
+          const localNews = JSON.parse(localNewsData)
+          localNews.forEach((n) => {
+            parseImages(n.image_url).forEach((url) => {
+              if (url) newsImageUrls.add(url.trim())
+            })
+          })
+        } catch {
+          // ignore invalid local news data
+        }
+      }
+
+      // Merge media entries only and filter out duplicates from old news auto-sync
+      const allEntries = [...localPhotos, ...supabasePhotos].filter((entry) => {
+        const entryUrl = (entry.image_url || '').trim()
+        return entryUrl && !newsImageUrls.has(entryUrl)
+      })
+
+      // Deduplicate by image_url to prevent double entries from auto-sync
+      const seen = new Set()
+      const deduped = allEntries.filter(entry => {
+        const key = (entry.image_url || '').trim()
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
+      // Sort by date/created_at descending
+      deduped.sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0)
+        const dateB = new Date(b.date || b.created_at || 0)
+        return dateB - dateA
+      })
+
+      if (deduped.length > 0 || hasSupabase) {
+        setPhotos(deduped)
       } else {
         setPhotos([])
       }
@@ -157,148 +233,264 @@ export default function MediaPage() {
             Saat ini belum ada dokumentasi foto kenangan yang diunggah. Silakan hubungi admin.
           </p>
         </div>
-      ) : (
+      ) : (() => {
+        // Flatten all photos: each image in a multi-image entry becomes its own grid item
+        const flatPhotos = photos.flatMap(photo => {
+          const imgs = parseImages(photo.image_url)
+          if (imgs.length === 0) return []
+          return imgs.map((imgUrl, imgIdx) => ({
+            ...photo,
+            _flatImgUrl: imgUrl,
+            _flatImgIdx: imgIdx,
+            _totalImages: imgs.length,
+            _allImages: imgs,
+            _flatId: photo.id + '-img-' + imgIdx,
+          }))
+        })
+
+        const groupByDate = (items) => {
+          const groups = items.reduce((acc, item) => {
+            const key = item.date || item.created_at?.split('T')[0] || 'unknown'
+            if (!acc[key]) acc[key] = []
+            acc[key].push(item)
+            return acc
+          }, {})
+
+          return Object.entries(groups)
+            .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+            .map(([date, items]) => ({ date, items }))
+        }
+
+        return (
         <div className="space-y-12">
-          {/* Loop through each year that should be displayed */}
           {(selectedYear === 'Semua' ? uniqueYears : [Number(selectedYear)])
-            .filter((y) => photos.some((p) => p.year === y))
+            .filter((y) => flatPhotos.some((p) => p.year === y))
             .map((y) => {
-              const yearPhotos = photos.filter((p) => p.year === y)
+              const yearItems = flatPhotos.filter((p) => p.year === y)
+              const dateGroups = groupByDate(yearItems)
               return (
-                <div key={y} className="space-y-4">
-                  {/* Year Header */}
-                  <div className="flex items-center gap-3 border-b border-abu-200 pb-2">
-                    <h2 className="font-heading text-lg md:text-xl font-bold text-abu-900">
-                      Tahun {y}
-                    </h2>
+                <div key={y} className="space-y-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-abu-200 pb-2">
+                    <div>
+                      <h2 className="font-heading text-lg md:text-xl font-bold text-abu-900">
+                        Tahun {y}
+                      </h2>
+                      <p className="text-sm text-abu-500 mt-1">
+                        Terbagi menjadi {dateGroups.length} tanggal berbeda
+                      </p>
+                    </div>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-merah-50 text-merah-700 border border-merah-100">
-                      {yearPhotos.length} Foto
+                      {yearItems.length} Foto
                     </span>
                   </div>
 
-                  {/* Horizontal Scroll Grid (2 rows high) — Seamless photo wall */}
-                  <div className="grid grid-rows-2 grid-flow-col gap-3 justify-start overflow-x-auto pb-4 pt-1 px-1 -mx-4 md:mx-0 rounded-3xl border border-abu-200/50 shadow-sm scrollbar-thin h-[380px] md:h-[430px]">
-                    {yearPhotos.map((photo, index) => {
-                      const isFeatured = index === 0
-                      
-                      if (isFeatured) {
-                        return (
-                          <div
-                            key={photo.id}
-                            onClick={() => { setLightboxPhotosList(yearPhotos); setLightboxIndex(index); }}
-                            className="row-span-2 relative overflow-hidden group cursor-pointer w-[340px] sm:w-[460px] md:w-[580px] h-full flex-shrink-0 bg-white border border-abu-200 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.015] focus-ring flex flex-col rounded-2xl"
-                          >
-                            <div className="w-full h-[70%] overflow-hidden rounded-t-2xl">
-                              <img
-                                src={parseImages(photo.image_url)[0]}
-                                alt={photo.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                loading="lazy"
-                              />
-                            </div>
-                            {/* Caption below image */}
-                            <div className="p-4 bg-white text-abu-850 flex flex-col justify-start rounded-b-2xl h-[30%] border-t border-abu-150">
-                              <span className="bg-merah-50 border border-merah-200 text-merah-700 font-bold text-[9px] px-2 py-0.5 rounded uppercase tracking-wider mb-2 self-start shadow-sm">
-                                Tahun {photo.year}
-                              </span>
-                              <h4 className="font-heading text-sm md:text-base font-extrabold text-abu-900 line-clamp-1 leading-snug">
-                                {photo.title}
-                              </h4>
-                              {photo.description && (
-                                <p className="text-xs text-abu-500 mt-1 leading-relaxed line-clamp-2">
-                                  {photo.description}
-                                </p>
-                              )}
-                            </div>
+                  <div className="space-y-8">
+                    {dateGroups.map(({ date, items }) => {
+                      const displayLabel = date === 'unknown' ? 'Tanpa Tanggal' : formatDate(date)
+                      return (
+                        <div key={date} className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-heading text-base md:text-lg font-bold text-abu-900">
+                              {displayLabel}
+                            </h3>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-abu-100 text-abu-700 border border-abu-200">
+                              {items.length} Foto
+                            </span>
                           </div>
-                        )
-                      } else {
-                        return (
-                          <div
-                            key={photo.id}
-                            onClick={() => { setLightboxPhotosList(yearPhotos); setLightboxIndex(index); }}
-                            className="relative overflow-hidden group cursor-pointer w-[210px] sm:w-[240px] md:w-[270px] h-full flex-shrink-0 bg-abu-900 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.015] focus-ring"
-                          >
-                            <img
-                              src={parseImages(photo.image_url)[0]}
-                              alt={photo.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
-                              loading="lazy"
-                            />
+
+                          <div className="grid grid-rows-2 grid-flow-col gap-3 justify-start overflow-x-auto pb-4 pt-1 px-1 -mx-4 md:mx-0 rounded-3xl border border-abu-200/50 shadow-sm scrollbar-thin h-[380px] md:h-[430px]">
+                            {items.map((item, index) => {
+                              const isFeatured = index === 0
+
+                              if (isFeatured) {
+                                return (
+                                  <div
+                                    key={item._flatId}
+                                    onClick={() => { setLightboxPhotosList(items); setLightboxIndex(index); }}
+                                    className="row-span-2 relative overflow-hidden group cursor-pointer w-[340px] sm:w-[460px] md:w-[580px] h-full flex-shrink-0 bg-white border border-abu-200 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.015] focus-ring flex flex-col rounded-2xl"
+                                  >
+                                    <div className="w-full h-[70%] overflow-hidden rounded-t-2xl relative">
+                                      <img
+                                        src={item._flatImgUrl}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                      {item._totalImages > 1 && item._flatImgIdx === 0 && (
+                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+                                          <Icon icon="solar:gallery-bold" className="w-3 h-3" />
+                                          {item._totalImages}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="p-4 bg-white text-abu-850 flex flex-col justify-start rounded-b-2xl h-[30%] border-t border-abu-150">
+                                      <span className="bg-merah-50 border border-merah-200 text-merah-700 font-bold text-[9px] px-2 py-0.5 rounded uppercase tracking-wider mb-2 self-start shadow-sm">
+                                        {item.date ? formatDate(item.date) : `Tahun ${item.year}`}
+                                      </span>
+                                      <h4 className="font-heading text-sm md:text-base font-extrabold text-abu-900 line-clamp-1 leading-snug">
+                                        {item.title}
+                                      </h4>
+                                      {item.description && (
+                                        <p className="text-xs text-abu-500 mt-1 leading-relaxed line-clamp-2">
+                                          {item.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              } else {
+                                return (
+                                  <div
+                                    key={item._flatId}
+                                    onClick={() => { setLightboxPhotosList(items); setLightboxIndex(index); }}
+                                    className="relative overflow-hidden group cursor-pointer w-[210px] sm:w-[240px] md:w-[270px] h-full flex-shrink-0 bg-abu-900 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.015] focus-ring"
+                                  >
+                                    <img
+                                      src={item._flatImgUrl}
+                                      alt={item.title}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+                                      loading="lazy"
+                                      referrerPolicy="no-referrer"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex flex-col justify-end p-3">
+                                      <span className="text-white text-xs font-bold line-clamp-1">{item.title}</span>
+                                      <span className="text-white/70 text-[10px] mt-0.5">
+                                        {item.date ? formatDate(item.date) : `Tahun ${item.year}`}
+                                      </span>
+                                    </div>
+                                    {item._totalImages > 1 && item._flatImgIdx === 0 && (
+                                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                                        <Icon icon="solar:gallery-bold" className="w-3 h-3" />
+                                        {item._totalImages}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              }
+                            })}
                           </div>
-                        )
-                      }
+                        </div>
+                      )
                     })}
                   </div>
                 </div>
               )
             })}
         </div>
-      )}
+        )
+      })()}
  
-      {/* ── Photo Lightbox ────────────────────────────────────────── */}
+      {/* ── Photo Lightbox (Redesigned) ─────────────────────────────── */}
       {lightboxIndex >= 0 && lightboxPhotosList.length > 0 && (() => {
-        const activePhoto = lightboxPhotosList[lightboxIndex]
-        if (!activePhoto) return null
-        const imageList = parseImages(activePhoto.image_url)
-        const currentImg = imageList[0] || activePhoto.image_url
+        const activeItem = lightboxPhotosList[lightboxIndex]
+        if (!activeItem) return null
  
         return (
           <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/95 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-abu-950/95 backdrop-blur-md"
             onClick={() => { setLightboxIndex(-1); setLightboxPhotosList([]); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setLightboxIndex(-1); setLightboxPhotosList([]); }
+              if (e.key === 'ArrowLeft') setLightboxIndex((prev) => (prev - 1 + lightboxPhotosList.length) % lightboxPhotosList.length)
+              if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev + 1) % lightboxPhotosList.length)
+            }}
+            tabIndex={0}
+            ref={(el) => el && el.focus()}
             role="dialog"
             aria-modal="true"
           >
+            {/* Close Button Desktop */}
             <button
-              onClick={() => { setLightboxIndex(-1); setLightboxPhotosList([]); }}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors text-lg cursor-pointer z-20"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(-1); setLightboxPhotosList([]); }}
+              className="hidden md:flex absolute top-6 right-6 w-11 h-11 rounded-full bg-abu-800 hover:bg-merah-600 text-white items-center justify-center transition-all cursor-pointer z-[60] backdrop-blur-sm border border-abu-700 shadow-md"
               aria-label="Tutup foto"
             >
-              ✕
+              <Icon icon="solar:close-circle-bold" className="w-6 h-6" />
             </button>
-            
+
+            {/* Content Container */}
             <div 
-              className="max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center relative"
+              className="w-[95%] max-w-6xl max-h-[90vh] flex flex-col md:flex-row bg-abu-900 border border-abu-800 rounded-2xl overflow-hidden shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Carousel navigation controls for all photos in the year */}
-              {lightboxPhotosList.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setLightboxIndex((prev) => (prev - 1 + lightboxPhotosList.length) % lightboxPhotosList.length)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/75 hover:scale-105 transition-all text-xl font-bold cursor-pointer z-10 focus-ring"
-                    aria-label="Foto sebelumnya"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => setLightboxIndex((prev) => (prev + 1) % lightboxPhotosList.length)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/75 hover:scale-105 transition-all text-xl font-bold cursor-pointer z-10 focus-ring"
-                    aria-label="Foto berikutnya"
-                  >
-                    ›
-                  </button>
-                  {/* Page indicator */}
-                  <div className="absolute top-4 left-4 bg-black/60 px-3 py-1 rounded-full text-xs font-bold text-white z-10">
-                    {lightboxIndex + 1} / {lightboxPhotosList.length}
-                  </div>
-                </>
-              )}
- 
-              <img
-                src={currentImg}
-                alt={activePhoto.title}
-                className="max-w-full max-h-[65vh] object-contain rounded-t-2xl shadow-2xl animate-fade-in bg-black"
-              />
-              <div className="w-full bg-abu-900 border-t border-white/10 p-5 text-white rounded-b-2xl max-w-full text-center">
-                <span className="inline-block bg-merah-650 text-white font-bold text-[10px] px-2.5 py-1 rounded uppercase tracking-wider mb-2.5">
-                  Tahun {activePhoto.year}
-                </span>
-                <h4 className="font-heading text-lg font-bold">{activePhoto.title}</h4>
-                {lightboxIndex === 0 && activePhoto.description && (
-                  <p className="text-sm text-abu-300 mt-1.5 max-w-2xl mx-auto leading-relaxed">{activePhoto.description}</p>
+              {/* Left Side: Main Image */}
+              <div className="w-full md:w-[65%] lg:w-[70%] bg-abu-950 flex items-center justify-center relative min-h-[40vh] md:min-h-0 border-b md:border-b-0 md:border-r border-abu-800">
+                <img
+                  key={activeItem._flatImgUrl}
+                  src={activeItem._flatImgUrl}
+                  alt={activeItem.title}
+                  className="max-w-full max-h-[40vh] md:max-h-[90vh] object-contain animate-fade-in"
+                  style={{ transition: 'opacity 0.3s ease' }}
+                  referrerPolicy="no-referrer"
+                />
+                
+                {/* Navigation inside Image Container */}
+                {lightboxPhotosList.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev - 1 + lightboxPhotosList.length) % lightboxPhotosList.length); }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-white/20"
+                      aria-label="Foto sebelumnya"
+                    >
+                      <Icon icon="solar:alt-arrow-left-bold" className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev + 1) % lightboxPhotosList.length); }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-all cursor-pointer z-30 border border-white/20"
+                      aria-label="Foto berikutnya"
+                    >
+                      <Icon icon="solar:alt-arrow-right-bold" className="w-5 h-5" />
+                    </button>
+                  </>
                 )}
+
+                {/* Counter Badge inside Image Container */}
+                <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white z-30 border border-white/10 shadow-sm">
+                  {lightboxIndex + 1} / {lightboxPhotosList.length}
+                </div>
+              </div>
+
+              {/* Right Side: Caption Sidebar */}
+              <div className="w-full md:w-[35%] lg:w-[30%] bg-abu-900 flex flex-col max-h-[50vh] md:max-h-none relative">
+                {/* Close Button Mobile */}
+                <div className="md:hidden absolute top-3 right-3 z-30">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setLightboxIndex(-1); setLightboxPhotosList([]); }}
+                    className="w-8 h-8 rounded-full bg-abu-800 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-abu-700"
+                  >
+                    <Icon icon="solar:close-circle-bold" className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar h-full">
+                  <div className="flex flex-wrap items-center gap-2 mb-4 pr-6 md:pr-0">
+                    <span className="inline-flex items-center justify-center h-6 bg-merah-700 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm leading-none whitespace-nowrap">
+                      {activeItem.date ? formatDate(activeItem.date) : `Tahun ${activeItem.year}`}
+                    </span>
+                    {activeItem._source === 'news' && (
+                      <span className="inline-flex items-center justify-center h-6 bg-blue-950 text-blue-300 border border-blue-800 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm gap-1 leading-none whitespace-nowrap">
+                        <Icon icon="solar:document-text-bold" className="w-3 h-3" />
+                        Dari Berita
+                      </span>
+                    )}
+                    {activeItem._totalImages > 1 && (
+                      <span className="inline-flex items-center justify-center h-6 bg-abu-800 text-abu-300 border border-abu-700 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none whitespace-nowrap">
+                        Gambar {activeItem._flatImgIdx + 1} dari {activeItem._totalImages}
+                      </span>
+                    )}
+                  </div>
+
+                  <h4 className="font-heading text-xl md:text-2xl font-extrabold text-white leading-snug mb-4">
+                    {activeItem.title}
+                  </h4>
+
+                  {activeItem.description && (
+                    <p className="text-sm md:text-base text-abu-300 leading-relaxed whitespace-pre-wrap text-justify">
+                      {activeItem.description}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -15,6 +15,7 @@ import { Icon } from '@iconify/react'
 
 export default function LiveTicker() {
   const [announcements, setAnnouncements] = useState([])
+  const [isPopupOpen, setIsPopupOpen] = useState(false)
 
   // ── Fetch announcements ──────────────────────────────────
   useEffect(() => {
@@ -86,8 +87,26 @@ export default function LiveTicker() {
     }
   }, [])
 
-  // Don't render until we have announcements
-  if (!announcements.length) return null
+  // ── Hide when popup is open ──────────────────────────────
+  useEffect(() => {
+    const checkPopups = () => {
+      // Find any element that uses fixed inset-0 (standard pattern for popups/modals in this app)
+      const popups = document.querySelectorAll('.fixed.inset-0')
+      setIsPopupOpen(popups.length > 0)
+    }
+
+    // Initial check
+    checkPopups()
+
+    // Observe body for changes in DOM to detect modal open/close
+    const observer = new MutationObserver(checkPopups)
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    return () => observer.disconnect()
+  }, [])
+
+  // Don't render until we have announcements, or if a popup is open
+  if (!announcements.length || isPopupOpen) return null
 
   // Build ticker string — repeat if it's too short to prevent jumpy loop on wide screens
   let repeatedAnnouncements = [...announcements]

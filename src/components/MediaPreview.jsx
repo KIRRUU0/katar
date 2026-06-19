@@ -9,12 +9,12 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
-    const match = url.match(driveRegex)
+    const trimmed = url.trim()
+    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
       return `https://lh3.googleusercontent.com/d/${match[1]}`
     }
-    return url
+    return trimmed
   }
 
   let urls = []
@@ -139,6 +139,7 @@ export default function MediaPreview() {
                 alt={item.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
                 loading="lazy"
+                referrerPolicy="no-referrer"
               />
               {/* Dark Overlay with Title */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 rounded-2xl opacity-90 group-hover:opacity-100 transition-opacity">

@@ -9,12 +9,12 @@ const parseImages = (imageUrl) => {
   
   const getDirectImageUrl = (url) => {
     if (!url) return ''
-    const driveRegex = /(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)|lh3\.googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{25,})/i
-    const match = url.match(driveRegex)
+    const trimmed = url.trim()
+    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
     if (match && match[1]) {
       return `https://lh3.googleusercontent.com/d/${match[1]}`
     }
-    return url
+    return trimmed
   }
 
   let urls = []
@@ -172,6 +172,7 @@ export default function NewsCarousel() {
                   alt={item.title}
                   className="w-full h-full object-cover rounded-t-2xl"
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                 />
                 {/* Subtle gradient overlay for readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-2xl" />
