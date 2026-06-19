@@ -1476,6 +1476,9 @@ function FormKelolaBerita() {
     imageUrl: '',
   })
   const [editUploading, setEditUploading] = useState(false)
+  const [tempGalleryInput, setTempGalleryInput] = useState('')
+  const [tempEditGalleryInput, setTempEditGalleryInput] = useState('')
+  const [lightboxUrl, setLightboxUrl] = useState(null)
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -1698,17 +1701,48 @@ function FormKelolaBerita() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
-          <textarea
-            className="form-input focus-ring text-sm min-h-[60px] py-2"
-            placeholder="Tempel URL gambar galeri tambahan di sini, pisahkan dengan koma"
-            value={parseImages(form.imageUrl).slice(1).join(', ')}
-            onChange={(e) => {
-              const val = e.target.value
-              const mainUrl = parseImages(form.imageUrl)[0] || ''
-              const others = val.split(',').map(u => u.trim()).filter(Boolean)
-              const combined = mainUrl ? [mainUrl, ...others] : others
-              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+          <input
+            type="text"
+            className="form-input focus-ring text-sm"
+            placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+            value={tempGalleryInput}
+            onChange={(e) => setTempGalleryInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                const url = tempGalleryInput.trim()
+                if (url) {
+                  const current = parseImages(form.imageUrl)
+                  const mainUrl = current[0] || ''
+                  const others = current.slice(1)
+                  const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                  updateField('imageUrl', JSON.stringify(combined))
+                  setTempGalleryInput('')
+                }
+              }
+            }}
+            onPaste={(e) => {
+              const clipboardData = e.clipboardData || window.clipboardData
+              const pastedText = clipboardData.getData('Text') || ''
+              const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
+              const matches = pastedText.match(urlRegex) || []
+              const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
+              const newUrls = []
+              items.forEach(item => {
+                if (item.startsWith('http://') || item.startsWith('https://') || item.includes('drive.google.com') || item.includes('lh3.googleusercontent')) {
+                  newUrls.push(item)
+                }
+              })
+              if (newUrls.length > 0) {
+                e.preventDefault()
+                const current = parseImages(form.imageUrl)
+                const mainUrl = current[0] || ''
+                const others = current.slice(1)
+                const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                updateField('imageUrl', JSON.stringify(combined))
+                setTempGalleryInput('')
+              }
             }}
           />
         </div>
@@ -1741,7 +1775,12 @@ function FormKelolaBerita() {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
             {parseImages(form.imageUrl).map((url, idx) => (
               <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                <img
+                  src={url}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                  onClick={() => setLightboxUrl(url)}
+                />
                 <button
                   type="button"
                   onClick={() => {
@@ -1822,7 +1861,15 @@ function FormKelolaBerita() {
                     <td className="p-3 text-center font-medium text-abu-500">{idx + 1}</td>
                     <td className="p-3">
                       <div className="w-14 h-10 rounded overflow-hidden border border-abu-200">
-                        <img src={parseImages(item.image_url)[0]} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={parseImages(item.image_url)[0]}
+                          alt=""
+                          className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          onClick={() => {
+                            const imgUrl = parseImages(item.image_url)[0]
+                            if (imgUrl) setLightboxUrl(imgUrl)
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="p-3 font-semibold text-abu-900">{item.title}</td>
@@ -1903,17 +1950,48 @@ function FormKelolaBerita() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
-                <textarea
-                  className="form-input focus-ring text-sm min-h-[60px] py-2"
-                  placeholder="Tempel URL gambar galeri tambahan di sini, pisahkan dengan koma"
-                  value={parseImages(editForm.imageUrl).slice(1).join(', ')}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    const mainUrl = parseImages(editForm.imageUrl)[0] || ''
-                    const others = val.split(',').map(u => u.trim()).filter(Boolean)
-                    const combined = mainUrl ? [mainUrl, ...others] : others
-                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+                <input
+                  type="text"
+                  className="form-input focus-ring text-sm"
+                  placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+                  value={tempEditGalleryInput}
+                  onChange={(e) => setTempEditGalleryInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const url = tempEditGalleryInput.trim()
+                      if (url) {
+                        const current = parseImages(editForm.imageUrl)
+                        const mainUrl = current[0] || ''
+                        const others = current.slice(1)
+                        const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                        setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                        setTempEditGalleryInput('')
+                      }
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const clipboardData = e.clipboardData || window.clipboardData
+                    const pastedText = clipboardData.getData('Text') || ''
+                    const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
+                    const matches = pastedText.match(urlRegex) || []
+                    const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
+                    const newUrls = []
+                    items.forEach(item => {
+                      if (item.startsWith('http://') || item.startsWith('https://') || item.includes('drive.google.com') || item.includes('lh3.googleusercontent')) {
+                        newUrls.push(item)
+                      }
+                    })
+                    if (newUrls.length > 0) {
+                      e.preventDefault()
+                      const current = parseImages(editForm.imageUrl)
+                      const mainUrl = current[0] || ''
+                      const others = current.slice(1)
+                      const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                      setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                      setTempEditGalleryInput('')
+                    }
                   }}
                 />
               </div>
@@ -1946,7 +2024,12 @@ function FormKelolaBerita() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                   {parseImages(editForm.imageUrl).map((url, idx) => (
                     <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                      <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                      <img
+                        src={url}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                        onClick={() => setLightboxUrl(url)}
+                      />
                       <button
                         type="button"
                         onClick={() => {
@@ -2012,6 +2095,33 @@ function FormKelolaBerita() {
           </div>
         </div>
       )}
+
+      {/* Lightbox / Preview Modal */}
+      {lightboxUrl && (
+        <div 
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center">
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold cursor-pointer transition-colors focus-ring"
+              title="Tutup"
+            >
+              ✕
+            </button>
+            <img 
+              src={lightboxUrl} 
+              alt="Preview Full" 
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="mt-4 text-white/80 text-sm break-all text-center px-4 bg-black/40 py-2 rounded-lg max-w-full">
+              {lightboxUrl}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2045,6 +2155,9 @@ function FormKelolaMedia({ onMediaAdded }) {
     description: '',
   })
   const [editUploading, setEditUploading] = useState(false)
+  const [tempGalleryInput, setTempGalleryInput] = useState('')
+  const [tempEditGalleryInput, setTempEditGalleryInput] = useState('')
+  const [lightboxUrl, setLightboxUrl] = useState(null)
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -2290,17 +2403,48 @@ function FormKelolaMedia({ onMediaAdded }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
-          <textarea
-            className="form-input focus-ring text-sm min-h-[60px] py-2"
-            placeholder="Tempel URL foto tambahan lainnya di sini, pisahkan dengan koma"
-            value={parseImages(form.imageUrl).slice(1).join(', ')}
-            onChange={(e) => {
-              const val = e.target.value
-              const mainUrl = parseImages(form.imageUrl)[0] || ''
-              const others = val.split(',').map(u => u.trim()).filter(Boolean)
-              const combined = mainUrl ? [mainUrl, ...others] : others
-              updateField('imageUrl', combined.length > 0 ? JSON.stringify(combined) : '')
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+          <input
+            type="text"
+            className="form-input focus-ring text-sm"
+            placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+            value={tempGalleryInput}
+            onChange={(e) => setTempGalleryInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                const url = tempGalleryInput.trim()
+                if (url) {
+                  const current = parseImages(form.imageUrl)
+                  const mainUrl = current[0] || ''
+                  const others = current.slice(1)
+                  const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                  updateField('imageUrl', JSON.stringify(combined))
+                  setTempGalleryInput('')
+                }
+              }
+            }}
+            onPaste={(e) => {
+              const clipboardData = e.clipboardData || window.clipboardData
+              const pastedText = clipboardData.getData('Text') || ''
+              const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
+              const matches = pastedText.match(urlRegex) || []
+              const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
+              const newUrls = []
+              items.forEach(item => {
+                if (item.startsWith('http://') || item.startsWith('https://') || item.includes('drive.google.com') || item.includes('lh3.googleusercontent')) {
+                  newUrls.push(item)
+                }
+              })
+              if (newUrls.length > 0) {
+                e.preventDefault()
+                const current = parseImages(form.imageUrl)
+                const mainUrl = current[0] || ''
+                const others = current.slice(1)
+                const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                updateField('imageUrl', JSON.stringify(combined))
+                setTempGalleryInput('')
+              }
             }}
           />
         </div>
@@ -2333,7 +2477,12 @@ function FormKelolaMedia({ onMediaAdded }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
             {parseImages(form.imageUrl).map((url, idx) => (
               <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                <img
+                  src={url}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                  onClick={() => setLightboxUrl(url)}
+                />
                 <button
                   type="button"
                   onClick={() => {
@@ -2414,7 +2563,15 @@ function FormKelolaMedia({ onMediaAdded }) {
                     <td className="p-3 text-center font-medium text-abu-500">{idx + 1}</td>
                     <td className="p-3">
                       <div className="w-14 h-10 rounded overflow-hidden border border-abu-200">
-                        <img src={parseImages(item.image_url)[0]} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={parseImages(item.image_url)[0]}
+                          alt=""
+                          className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                          onClick={() => {
+                            const imgUrl = parseImages(item.image_url)[0]
+                            if (imgUrl) setLightboxUrl(imgUrl)
+                          }}
+                        />
                       </div>
                     </td>
                     <td className="p-3 font-semibold text-abu-900">{item.title}</td>
@@ -2510,17 +2667,48 @@ function FormKelolaMedia({ onMediaAdded }) {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Opsional, pisahkan dengan koma)</label>
-                <textarea
-                  className="form-input focus-ring text-sm min-h-[60px] py-2"
-                  placeholder="Tempel URL foto tambahan lainnya di sini, pisahkan dengan koma"
-                  value={parseImages(editForm.imageUrl).slice(1).join(', ')}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    const mainUrl = parseImages(editForm.imageUrl)[0] || ''
-                    const others = val.split(',').map(u => u.trim()).filter(Boolean)
-                    const combined = mainUrl ? [mainUrl, ...others] : others
-                    setEditForm(prev => ({ ...prev, imageUrl: combined.length > 0 ? JSON.stringify(combined) : '' }))
+                <label className="block text-sm font-semibold text-abu-700 mb-1">Tautan Gambar Galeri Tambahan (Otomatis masuk preview saat ditempel/paste)</label>
+                <input
+                  type="text"
+                  className="form-input focus-ring text-sm"
+                  placeholder="Tempel (Paste) URL gambar di sini atau ketik lalu tekan Enter"
+                  value={tempEditGalleryInput}
+                  onChange={(e) => setTempEditGalleryInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const url = tempEditGalleryInput.trim()
+                      if (url) {
+                        const current = parseImages(editForm.imageUrl)
+                        const mainUrl = current[0] || ''
+                        const others = current.slice(1)
+                        const combined = mainUrl ? [mainUrl, ...others, url] : [...others, url]
+                        setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                        setTempEditGalleryInput('')
+                      }
+                    }
+                  }}
+                  onPaste={(e) => {
+                    const clipboardData = e.clipboardData || window.clipboardData
+                    const pastedText = clipboardData.getData('Text') || ''
+                    const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
+                    const matches = pastedText.match(urlRegex) || []
+                    const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
+                    const newUrls = []
+                    items.forEach(item => {
+                      if (item.startsWith('http://') || item.startsWith('https://') || item.includes('drive.google.com') || item.includes('lh3.googleusercontent')) {
+                        newUrls.push(item)
+                      }
+                    })
+                    if (newUrls.length > 0) {
+                      e.preventDefault()
+                      const current = parseImages(editForm.imageUrl)
+                      const mainUrl = current[0] || ''
+                      const others = current.slice(1)
+                      const combined = mainUrl ? [mainUrl, ...others, ...newUrls] : [...others, ...newUrls]
+                      setEditForm(prev => ({ ...prev, imageUrl: JSON.stringify(combined) }))
+                      setTempEditGalleryInput('')
+                    }
                   }}
                 />
               </div>
@@ -2575,7 +2763,12 @@ function FormKelolaMedia({ onMediaAdded }) {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                       {parseImages(editForm.imageUrl).map((url, idx) => (
                         <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group border border-abu-200 shadow-sm bg-abu-50">
-                          <img src={url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                          <img
+                            src={url}
+                            alt={`Preview ${idx + 1}`}
+                            className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                            onClick={() => setLightboxUrl(url)}
+                          />
                           <button
                             type="button"
                             onClick={() => {
@@ -2639,6 +2832,33 @@ function FormKelolaMedia({ onMediaAdded }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Preview Modal */}
+      {lightboxUrl && (
+        <div 
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center">
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold cursor-pointer transition-colors focus-ring"
+              title="Tutup"
+            >
+              ✕
+            </button>
+            <img 
+              src={lightboxUrl} 
+              alt="Preview Full" 
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="mt-4 text-white/80 text-sm break-all text-center px-4 bg-black/40 py-2 rounded-lg max-w-full">
+              {lightboxUrl}
+            </div>
           </div>
         </div>
       )}
