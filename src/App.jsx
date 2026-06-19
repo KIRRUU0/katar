@@ -182,8 +182,9 @@ export default function App() {
               {/* Bottom Copyright */}
               <div className="flex items-center justify-center w-full text-xs text-abu-500 pt-1 text-center">
                 <p>
-                  &copy; {new Date().getFullYear()} Karang Taruna RT 02/03. Hak Cipta Dilindungi.
+                  &copy; {new Date().getFullYear()} Karang Taruna RT 02/03.
                 </p>
+                <p>Hak Cipta Dilindungi.</p>
               </div>
 
             </div>
