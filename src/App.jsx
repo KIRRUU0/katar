@@ -124,10 +124,10 @@ export default function App() {
                   />
                   <div>
                     <h3 className="font-heading font-black text-lg tracking-wide uppercase text-abu-900 leading-none">
-                      KATAR <span className="text-merah-600">RT 02/03</span>
+                      IREMDA <span className="text-merah-600">RT 02/03</span>
                     </h3>
                     <p className="text-[9px] text-abu-500 uppercase tracking-widest font-bold text-left leading-none mt-1">
-                      Iremda RT 02/03
+                      Karang Taruna
                     </p>
                   </div>
                 </div>

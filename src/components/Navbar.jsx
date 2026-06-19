@@ -124,7 +124,7 @@ export default function Navbar() {
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="Logo Iremda" className="w-8 h-8 object-contain flex-shrink-0" />
             <span className="text-lg md:text-xl font-bold font-heading text-merah-700 tracking-tight">
-              IREMDA
+              02/03
             </span>
           </Link>
 
