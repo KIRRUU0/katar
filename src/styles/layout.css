@@ -18,7 +18,7 @@
 
 .ticker-content {
   display: flex;
-  animation: ticker-scroll 15s linear infinite;
+  animation: ticker-scroll 30s linear infinite;
 }
 
 /* Hide marquee when lightbox/modal is open */
