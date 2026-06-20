@@ -301,7 +301,7 @@ export default function FormKelolaTicker() {
 
       {/* Modal Edit Pengumuman */}
       {editingTicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-md">
           <div className="bg-white rounded-2xl border border-abu-200 shadow-xl max-w-lg w-full p-6 animate-fade-in">
             <div className="flex items-center justify-between border-b border-abu-200 pb-4 mb-4">
               <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2">

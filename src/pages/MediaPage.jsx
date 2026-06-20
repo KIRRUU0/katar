@@ -39,6 +39,7 @@ export default function MediaPage() {
 
   // Filter states
   const [selectedYear, setSelectedYear] = useState('Semua')
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [lightboxPhotosList, setLightboxPhotosList] = useState([])
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
@@ -215,21 +216,49 @@ export default function MediaPage() {
 
       </div>
 
-      {/* ── Year Filters ─────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {yearsList.map((y) => (
-          <button
-            key={y}
-            onClick={() => setSelectedYear(y)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[44px]
-                        ${selectedYear === y
-                          ? 'bg-merah-600 text-white shadow-sm'
-                          : 'bg-white border border-abu-200 text-abu-600 hover:bg-abu-50'
-                        }`}
-          >
-            {y === 'Semua' ? 'Semua Tahun' : `Tahun ${y}`}
-          </button>
-        ))}
+      {/* ── Year Filters Dropdown ───────────────────────────────── */}
+      <div className="relative mb-8 z-30 max-w-[240px]">
+        <label htmlFor="year-select" className="sr-only">Pilih Tahun</label>
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-white border border-abu-200 text-abu-850 rounded-xl text-sm font-semibold hover:bg-abu-50/70 hover:border-abu-300 transition-all cursor-pointer shadow-sm focus-ring"
+        >
+          <span className="flex items-center gap-2">
+            <Icon icon="solar:calendar-bold-duotone" className="w-5 h-5 text-merah-600" />
+            {selectedYear === 'Semua' ? 'Semua Tahun' : `Tahun ${selectedYear}`}
+          </span>
+          <Icon 
+            icon="solar:alt-arrow-down-bold" 
+            className={`w-4 h-4 text-abu-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
+          />
+        </button>
+
+        {isDropdownOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+            <div className="absolute left-0 right-0 mt-2 bg-white border border-abu-150 rounded-xl shadow-lg z-50 py-1.5 animate-fade-in max-h-60 overflow-y-auto">
+              {yearsList.map((y) => (
+                <button
+                  key={y}
+                  onClick={() => {
+                    setSelectedYear(y)
+                    setIsDropdownOpen(false)
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between cursor-pointer
+                            ${selectedYear === y
+                              ? 'bg-merah-50 text-merah-700 font-bold'
+                              : 'text-abu-700 hover:bg-abu-50'
+                            }`}
+                >
+                  <span>{y === 'Semua' ? 'Semua Tahun' : `Tahun ${y}`}</span>
+                  {selectedYear === y && (
+                    <Icon icon="solar:check-read-linear" className="w-4.5 h-4.5 text-merah-600" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Photo Grid ───────────────────────────────────────────── */}
@@ -326,7 +355,7 @@ export default function MediaPage() {
                         Terbagi menjadi {albumGroups.length} album kegiatan
                       </p>
                     </div>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-merah-50 text-merah-700 border border-merah-100">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-merah-50 text-merah-700 border border-merah-100 self-start sm:self-auto">
                       {yearItems.length} Foto
                     </span>
                   </div>
@@ -445,7 +474,7 @@ export default function MediaPage() {
  
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-abu-950/95 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-lg"
             onClick={() => { setLightboxIndex(-1); setLightboxPhotosList([]); }}
             onKeyDown={(e) => {
               if (e.key === 'Escape') { setLightboxIndex(-1); setLightboxPhotosList([]); }
@@ -509,42 +538,56 @@ export default function MediaPage() {
               </div>
 
               {/* Right Side: Caption Sidebar */}
-              <div className="w-full md:w-[35%] lg:w-[30%] bg-abu-900 flex flex-col max-h-[50vh] md:max-h-none relative">
+              <div className="w-full md:w-[35%] lg:w-[30%] bg-white flex flex-col max-h-[50vh] md:max-h-none relative">
                 {/* Close Button Mobile */}
                 <div className="md:hidden absolute top-3 right-3 z-30">
                   <button
                     onClick={(e) => { e.stopPropagation(); setLightboxIndex(-1); setLightboxPhotosList([]); }}
-                    className="w-8 h-8 rounded-full bg-abu-800 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-abu-700"
+                    className="w-8 h-8 rounded-full bg-black/40 hover:bg-merah-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-md"
                   >
                     <Icon icon="solar:close-circle-bold" className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar h-full">
-                  <div className="flex flex-wrap items-center gap-2 mb-4 pr-6 md:pr-0">
-                    <span className="inline-flex items-center justify-center h-6 bg-merah-700 text-white font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm leading-none whitespace-nowrap">
+                {/* 1. Header/Top Area (Red Background) */}
+                <div className="p-6 bg-merah-700 text-white flex-shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-3.5 pr-6 md:pr-0">
+                    <span className="inline-flex items-center justify-center h-6 bg-white text-merah-700 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm leading-none whitespace-nowrap">
                       {activeItem.date ? formatDate(activeItem.date) : `Tahun ${activeItem.year}`}
                     </span>
                     {activeItem.is_news_sync && (
-                      <span className="inline-flex items-center justify-center h-6 bg-blue-950 text-blue-300 border border-blue-800 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm gap-1 leading-none whitespace-nowrap">
-                        <Icon icon="solar:document-text-bold" className="w-3 h-3" />
+                      <span className="inline-flex items-center justify-center h-6 bg-white/20 text-white border border-white/30 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm gap-1 leading-none whitespace-nowrap">
+                        <Icon icon="solar:document-text-bold" className="w-3 h-3 text-white" />
                         Dari Berita
                       </span>
                     )}
                     {activeItem._totalImages > 1 && (
-                      <span className="inline-flex items-center justify-center h-6 bg-abu-800 text-abu-300 border border-abu-700 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none whitespace-nowrap">
+                      <span className="inline-flex items-center justify-center h-6 bg-white/20 text-white border border-white/30 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none whitespace-nowrap">
                         Gambar {activeItem._flatImgIdx + 1} dari {activeItem._totalImages}
                       </span>
                     )}
                   </div>
 
-                  <h4 className="font-heading text-xl md:text-2xl font-extrabold text-white leading-snug mb-4">
-                    {activeItem.title}
-                  </h4>
+                  {activeItem.title ? (
+                    <h4 className="font-heading text-lg md:text-xl font-extrabold text-white leading-snug" style={{ color: '#ffffff' }}>
+                      {activeItem.title}
+                    </h4>
+                  ) : (
+                    <h4 className="font-heading text-lg md:text-xl font-extrabold text-white/90 leading-snug italic" style={{ color: '#ffffff' }}>
+                      Dokumentasi Foto
+                    </h4>
+                  )}
+                </div>
 
-                  {activeItem.description && (
-                    <p className="text-sm md:text-base text-abu-300 leading-relaxed whitespace-pre-wrap text-justify">
+                {/* 2. Description Area (White Background) */}
+                <div className="p-6 overflow-y-auto custom-scrollbar flex-grow bg-white">
+                  {activeItem.description ? (
+                    <p className="text-sm md:text-base text-abu-800 leading-relaxed whitespace-pre-wrap text-justify">
                       {activeItem.description}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-abu-400 italic">
+                      Tidak ada deskripsi tambahan untuk foto ini.
                     </p>
                   )}
                 </div>

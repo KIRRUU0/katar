@@ -23,6 +23,7 @@ export default function LeaguePage() {
   const [activeRegisterTournament, setActiveRegisterTournament] = useState(null)
   const [toast, setToast] = useState({ message: '', type: '' })
   const [activeFilter, setActiveFilter] = useState('semua')
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false)
 
   const handleRegisterClick = (tournament) => {
     setActiveRegisterTournament(tournament)
@@ -166,25 +167,62 @@ export default function LeaguePage() {
           </h2>
         </div>
 
-        {/* Horizontal Scroll Filter Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none scroll-smooth -mx-4 px-4 md:mx-0 md:px-0">
-          {filterOptions.map((opt) => {
-            const isActive = activeFilter === opt.id
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setActiveFilter(opt.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-wider whitespace-nowrap transition-all focus-ring min-h-[38px] cursor-pointer
-                  ${isActive
-                    ? 'bg-merah-600 text-white shadow-md'
-                    : 'bg-white text-abu-600 border border-abu-200 hover:bg-abu-50'
-                  }`}
-              >
-                <Icon icon={opt.icon} className="w-4 h-4" />
-                {opt.label}
-              </button>
-            )
-          })}
+        {/* Category Filter Dropdown */}
+        <div className="relative mb-6 z-30 max-w-[280px]">
+          <label htmlFor="category-select" className="sr-only">Pilih Kategori Lomba</label>
+          <button
+            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-white border border-abu-200 text-abu-850 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-abu-50/70 hover:border-abu-300 transition-all cursor-pointer shadow-sm focus-ring"
+          >
+            <span className="flex items-center gap-2">
+              {(() => {
+                const currentOpt = filterOptions.find(opt => opt.id === activeFilter)
+                return (
+                  <>
+                    <Icon icon={currentOpt?.icon || 'solar:user-bold-duotone'} className="w-4.5 h-4.5 text-merah-600" />
+                    <span>{currentOpt?.label || 'Semua Lomba'}</span>
+                  </>
+                )
+              })()}
+            </span>
+            <Icon 
+              icon="solar:alt-arrow-down-bold" 
+              className={`w-4 h-4 text-abu-500 transition-transform duration-200 ${isFilterDropdownOpen ? 'rotate-180' : ''}`} 
+            />
+          </button>
+
+          {isFilterDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsFilterDropdownOpen(false)} />
+              <div className="absolute left-0 right-0 mt-2 bg-white border border-abu-150 rounded-xl shadow-lg z-50 py-1.5 animate-fade-in max-h-60 overflow-y-auto">
+                {filterOptions.map((opt) => {
+                  const isActive = activeFilter === opt.id
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        setActiveFilter(opt.id)
+                        setIsFilterDropdownOpen(false)
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-between cursor-pointer
+                                ${isActive
+                                  ? 'bg-merah-50 text-merah-700'
+                                  : 'text-abu-700 hover:bg-abu-50'
+                                }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon icon={opt.icon} className="w-4 h-4" />
+                        <span>{opt.label}</span>
+                      </span>
+                      {isActive && (
+                        <Icon icon="solar:check-read-linear" className="w-4.5 h-4.5 text-merah-600" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {loading ? (
@@ -356,7 +394,7 @@ function RegistrationModal({ tournament, onClose, onRegisterSuccess }) {
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/25 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       onClick={onClose}

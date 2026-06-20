@@ -695,7 +695,9 @@ export default function AdminPage() {
           const chartHeight = svgHeight - paddingTop - paddingBottom
 
           const points = trends.map((t, idx) => {
-            const x = paddingLeft + (idx / (trends.length - 1)) * chartWidth
+            const x = trends.length > 1
+              ? paddingLeft + (idx / (trends.length - 1)) * chartWidth
+              : paddingLeft + chartWidth / 2
             const y = paddingTop + chartHeight - (t.count / maxVal) * chartHeight
             return { x, y, label: t.label, count: t.count }
           })
@@ -784,34 +786,34 @@ export default function AdminPage() {
                   </div>
 
                   {/* Visitor Stats Cards */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Minggu</span>
-                      <div className="mt-1">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950">
+                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
+                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
                           {stats.visitorStats?.weekly || 0}
                         </div>
-                        <span className="text-[9px] text-abu-400">Pengunjung Unik</span>
+                        <span className="text-[9px] text-abu-400">Pengunjung Weekly</span>
                       </div>
                     </div>
 
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Bulan</span>
-                      <div className="mt-1">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950">
+                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
+                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
                           {stats.visitorStats?.monthly || 0}
                         </div>
-                        <span className="text-[9px] text-abu-400">Pengunjung Unik</span>
+                        <span className="text-[9px] text-abu-400">Pengunjung Monthly</span>
                       </div>
                     </div>
 
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Tahun</span>
-                      <div className="mt-1">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950">
+                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
+                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
                           {stats.visitorStats?.yearly || 0}
                         </div>
-                        <span className="text-[9px] text-abu-400">Pengunjung Unik</span>
+                        <span className="text-[9px] text-abu-400">Pengunjung Yearly</span>
                       </div>
                     </div>
                   </div>

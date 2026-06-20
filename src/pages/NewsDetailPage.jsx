@@ -406,7 +406,7 @@ export default function NewsDetailPage() {
                     {item.title}
                   </h4>
                   <time className="text-xs text-abu-400 font-medium">
-                    {formatDate(item.created_at)}
+                    {formatDate(item.date || item.created_at)}
                   </time>
                 </div>
               </Link>
@@ -417,7 +417,7 @@ export default function NewsDetailPage() {
       {/* Lightbox for news gallery with slider navigation */}
       {activePhotoIndex !== null && allImages[activePhotoIndex] && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-lg"
           onClick={() => setActivePhotoIndex(null)}
         >
           {/* Close button */}

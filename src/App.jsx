@@ -146,6 +146,7 @@ export default function App() {
                   {[
                     { href: "https://www.instagram.com/iremda_02/", icon: "ri:instagram-line", label: "Instagram" },
                     { href: "https://wa.me/6285781300161", icon: "ri:whatsapp-line", label: "WhatsApp" },
+                    { href: "https://www.tiktok.com/@iremdaa02", icon: "ri:tiktok-line", label: "TikTok" }
                   ].map((social, idx) => (
                     <a 
                       key={idx}

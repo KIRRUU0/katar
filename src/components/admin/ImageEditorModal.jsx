@@ -158,7 +158,7 @@ export default function ImageEditorModal({ imageUrl, onSave, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/35 backdrop-blur-lg animate-fade-in" onClick={onClose}>
       <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-abu-200 flex items-center justify-between bg-abu-50">

@@ -628,7 +628,7 @@ export default function FormKelolaOrganisasi() {
       </div>
 
       {editingMember && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/25 backdrop-blur-md">
           <div className="bg-white rounded-2xl border border-abu-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
             <div className="bg-gradient-to-r from-merah-700 to-merah-600 p-5 text-white flex items-center justify-between">
               <h3 className="font-heading text-lg font-bold flex items-center gap-2">
