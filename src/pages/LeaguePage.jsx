@@ -42,6 +42,7 @@ export default function LeaguePage() {
 
   // ─── Fetch tournament data on mount ─────────────────────────────
   useEffect(() => {
+    document.title = 'League & Agenda - Karang Taruna RT 02/03'
     async function fetchTournaments() {
       if (isSupabaseConfigured()) {
         try {

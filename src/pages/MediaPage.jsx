@@ -68,6 +68,7 @@ export default function MediaPage() {
 
   // Load photos
   useEffect(() => {
+    document.title = 'Galeri Foto Kegiatan - Karang Taruna RT 02/03'
     async function loadPhotos() {
       setLoading(true)
       let supabasePhotos = []

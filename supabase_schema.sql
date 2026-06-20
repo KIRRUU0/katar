@@ -313,3 +313,16 @@ INSERT INTO organization (role_key, role_name, name, image_url, display_order, y
   ('member', 'Anggota', 'Bunga Reyfan Ramadhani', null, 19, 2026);
 
 
+-- 13. PAGE VIEWS TABLE (Visitor Analytics)
+CREATE TABLE IF NOT EXISTS page_views (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  visitor_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Public insert page_views" ON page_views FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Admin read page_views" ON page_views FOR SELECT TO authenticated USING (true);

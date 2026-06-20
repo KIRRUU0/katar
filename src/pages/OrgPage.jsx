@@ -98,6 +98,7 @@ export default function OrgPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    document.title = 'Struktur Organisasi - Karang Taruna RT 02/03'
     async function fetchOrg() {
       try {
         let rows = []

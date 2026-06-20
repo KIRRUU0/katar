@@ -12,6 +12,7 @@ import NewsDetailPage from './pages/NewsDetailPage'
 import NewsListPage from './pages/NewsListPage'
 import OrgPage from './pages/OrgPage'
 import MediaPage from './pages/MediaPage'
+import { recordPageView } from './lib/analytics'
 
 /**
  * PageTransition — Animates page entrance on route change (fade-in)
@@ -49,6 +50,11 @@ function PageTransition({ children }) {
 export default function App() {
   const location = useLocation()
   const isHome = location.pathname === '/'
+
+  // Record page view on mount (once per session)
+  useEffect(() => {
+    recordPageView()
+  }, [])
 
   // Scroll to top on route change
   useEffect(() => {
@@ -98,7 +104,7 @@ export default function App() {
               <Route path="/league" element={<LeaguePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/news" element={<NewsListPage />} />
-              <Route path="/news/:id" element={<NewsDetailPage />} />
+              <Route path="/news/:slug" element={<NewsDetailPage />} />
               <Route path="/org" element={<OrgPage />} />
               <Route path="/media" element={<MediaPage />} />
             </Routes>

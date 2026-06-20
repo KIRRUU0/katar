@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
+import { generateSlug } from '../lib/slug'
 
 const parseImages = (imageUrl) => {
   if (!imageUrl) return []
@@ -49,6 +50,7 @@ export default function NewsListPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    document.title = 'Berita & Kegiatan - Karang Taruna RT 02/03'
     const fetchNews = async () => {
       setLoading(true)
       let supabaseNews = []
@@ -144,7 +146,7 @@ export default function NewsListPage() {
           {news.map((item) => (
             <Link
               key={item.id}
-              to={`/news/${item.id}`}
+              to={`/news/${generateSlug(item.title) || item.id}`}
               className="card bg-white overflow-hidden group hover:scale-[1.01] hover:shadow-md transition-all border border-abu-150 flex flex-col h-full"
             >
               {/* Image Frame */}

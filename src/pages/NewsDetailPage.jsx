@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { generateSlug } from '../lib/slug'
 
 const parseImages = (imageUrl) => {
   if (!imageUrl) return []
@@ -33,7 +34,7 @@ const parseImages = (imageUrl) => {
 }
 
 export default function NewsDetailPage() {
-  const { id } = useParams()
+  const { slug } = useParams()
   const [article, setArticle] = useState(null)
   const [otherNews, setOtherNews] = useState([])
   const [loading, setLoading] = useState(true)
@@ -87,55 +88,113 @@ export default function NewsDetailPage() {
     }
   }
 
+  // Set dynamic title and meta description when article changes
+  useEffect(() => {
+    if (article) {
+      const originalTitle = document.title
+      const metaDesc = document.querySelector('meta[name="description"]')
+      const originalDesc = metaDesc ? metaDesc.getAttribute('content') : ''
+
+      document.title = `${article.title} - Karang Taruna RT 02/03`
+      if (metaDesc && article.description) {
+        metaDesc.setAttribute('content', article.description.slice(0, 160))
+      }
+
+      return () => {
+        document.title = originalTitle
+        if (metaDesc && originalDesc) {
+          metaDesc.setAttribute('content', originalDesc)
+        }
+      }
+    }
+  }, [article])
+
   useEffect(() => {
     async function fetchArticle() {
       setLoading(true)
       let found = null
       let others = []
 
-      // 1. Check local storage first
       const localData = localStorage.getItem('katar_news_articles')
       let localNews = []
-      if (localData) {
-        try {
-          localNews = JSON.parse(localData)
-          found = localNews.find((item) => String(item.id) === String(id))
-        } catch {
-          localNews = []
-        }
-      }
 
-      // 2. Check Supabase
-      let supabaseNews = []
-      if (isSupabaseConfigured()) {
-        try {
-          if (!found) {
+      // Check if parameter matches UUID format
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug || '')
+
+      if (isUUID) {
+        // 1. Check local storage by ID
+        if (localData) {
+          try {
+            localNews = JSON.parse(localData)
+            found = localNews.find((item) => String(item.id) === String(slug))
+          } catch {
+            localNews = []
+          }
+        }
+
+        // 2. Check Supabase by ID
+        if (!found && isSupabaseConfigured()) {
+          try {
             const { data, error } = await supabase
               .from('news')
               .select('*')
-              .eq('id', id)
+              .eq('id', slug)
               .single()
 
             if (!error && data) {
               found = data
             }
+          } catch (err) {
+            console.warn('NewsDetailPage: Supabase lookup by ID failed', err)
           }
-
-          // Fetch other news for sidebar
-          const { data: othersData } = await supabase
-            .from('news')
-            .select('*')
-            .neq('id', id)
-            .limit(3)
-          supabaseNews = othersData || []
-        } catch (err) {
-          console.warn('NewsDetailPage: Supabase query failed', err)
         }
       }
 
+      // If not found by ID, or it is not a UUID, search by slug
+      if (!found) {
+        if (localData && localNews.length === 0) {
+          try {
+            localNews = JSON.parse(localData)
+          } catch {
+            localNews = []
+          }
+        }
+        found = localNews.find((item) => generateSlug(item.title) === slug)
+
+        if (!found && isSupabaseConfigured()) {
+          try {
+            const { data, error } = await supabase
+              .from('news')
+              .select('*')
+            if (!error && data) {
+              found = data.find((item) => generateSlug(item.title) === slug)
+            }
+          } catch (err) {
+            console.warn('NewsDetailPage: Supabase search by slug failed', err)
+          }
+        }
+      }
+
+      // Fetch other news for sidebar
+      let supabaseNews = []
+      if (isSupabaseConfigured()) {
+        try {
+          const targetId = found ? found.id : null
+          let query = supabase.from('news').select('*')
+          if (targetId) {
+            query = query.neq('id', targetId)
+          }
+          const { data } = await query.limit(3)
+          supabaseNews = data || []
+        } catch (err) {
+          console.warn('NewsDetailPage: Supabase query for others failed', err)
+        }
+      }
+
+      const targetId = found ? found.id : null
       const combinedOthers = [
-        ...localNews.filter((item) => String(item.id) !== String(id)),
-        ...supabaseNews
+        ...localNews.filter((item) => String(item.id) !== String(targetId)),
+        ...supabaseNews.filter((item) => String(item.id) !== String(targetId))
       ]
 
       others = combinedOthers.slice(0, 3)
@@ -146,7 +205,7 @@ export default function NewsDetailPage() {
     }
 
     fetchArticle()
-  }, [id])
+  }, [slug])
 
   if (loading) {
     return (
@@ -263,7 +322,7 @@ export default function NewsDetailPage() {
           </h1>
 
           {/* Description */}
-          <p className="text-abu-600 text-sm sm:text-base leading-relaxed whitespace-pre-line md:text-lg">
+          <p className="text-abu-600 text-sm sm:text-base leading-relaxed whitespace-pre-line md:text-lg text-justify">
             {article.description}
           </p>
 
@@ -329,7 +388,7 @@ export default function NewsDetailPage() {
             {otherNews.map((item) => (
               <Link
                 key={item.id}
-                to={`/news/${item.id}`}
+                to={`/news/${generateSlug(item.title) || item.id}`}
                 className="group flex gap-3.5 items-start bg-white p-3 rounded-xl border border-abu-150 transition-all hover:shadow-sm hover:scale-[1.01]"
               >
                 {/* Thumb */}

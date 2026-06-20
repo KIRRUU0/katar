@@ -3,6 +3,7 @@ import { animate } from 'animejs'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
+import { generateSlug } from '../lib/slug'
 
 const parseImages = (imageUrl) => {
   if (!imageUrl) return []
@@ -177,7 +178,7 @@ export default function NewsCarousel() {
           {news.map((item) => (
             <Link
               key={item.id}
-              to={`/news/${item.id}`}
+              to={`/news/${generateSlug(item.title) || item.id}`}
               className="news-card card flex flex-col overflow-hidden border border-abu-150 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer opacity-0"
             >
               {/* Image */}

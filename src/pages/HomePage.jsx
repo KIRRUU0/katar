@@ -31,6 +31,7 @@ export default function HomePage() {
 
   // ── Hero entrance animations ────────────────────────────────
   useEffect(() => {
+    document.title = 'Karang Taruna RT 02/03 - Beranda'
     scope.current = createScope({ root: root.current }).add(() => {
       animate('.hero-title', {
         translateY: [20, 0],
