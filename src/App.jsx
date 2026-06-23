@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { Icon } from '@iconify/react'
-import { animate } from 'animejs'
 import Navbar from './components/Navbar'
 import LiveTicker from './components/LiveTicker'
 import HomePage from './pages/HomePage'
@@ -15,6 +14,87 @@ import MediaPage from './pages/MediaPage'
 import { recordPageView } from './lib/analytics'
 import PopupBanner from './components/PopupBanner'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
+
+const BackToTopButton = memo(function BackToTopButton() {
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const frameRef = useRef(null)
+  const prevProgressRef = useRef(-1)
+  const prevShowRef = useRef(null)
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      const scrollY = window.scrollY
+      const totalScrollHeight = document.documentElement.scrollHeight - window.innerHeight
+      const shouldShow = scrollY > 300
+      const progress = totalScrollHeight > 0 ? Math.min(Math.max(scrollY / totalScrollHeight, 0), 1) : 0
+
+      if (prevShowRef.current !== shouldShow) {
+        prevShowRef.current = shouldShow
+        setShowScrollBtn(shouldShow)
+      }
+
+      if (Math.abs(progress - prevProgressRef.current) > 0.01) {
+        prevProgressRef.current = progress
+        setScrollProgress(progress)
+      }
+
+      frameRef.current = null
+    }
+
+    const handleScroll = () => {
+      if (frameRef.current === null) {
+        frameRef.current = requestAnimationFrame(updateScrollState)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current)
+      }
+    }
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  return (
+    <button
+      onClick={scrollToTop}
+      aria-label="Kembali ke atas"
+      className={`fixed bottom-16 right-6 z-40 w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md hover:shadow-lg border border-abu-200/50 transition-all duration-300 focus-ring cursor-pointer hover:-translate-y-1 ${
+        showScrollBtn ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
+      }`}
+    >
+      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 48 48">
+        <circle
+          cx="24"
+          cy="24"
+          r="21"
+          fill="transparent"
+          stroke="#F3F4F6"
+          strokeWidth="2.5"
+        />
+        <circle
+          cx="24"
+          cy="24"
+          r="21"
+          fill="transparent"
+          stroke="#DC2626"
+          strokeWidth="2.5"
+          strokeDasharray="132"
+          strokeDashoffset={132 - 132 * scrollProgress}
+          strokeLinecap="round"
+          className="transition-all duration-150 ease-out"
+        />
+      </svg>
+      <Icon icon="solar:arrow-up-linear" className="w-5 h-5 text-merah-600 relative z-10" />
+    </button>
+  )
+})
 
 /**
  * PageTransition — Animates page entrance on route change (fade-in)
@@ -87,34 +167,6 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
-  // Back to Top button states
-  const [showScrollBtn, setShowScrollBtn] = useState(false)
-  const [scrollProgress, setScrollProgress] = useState(0)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Show button if scrolled more than 300px
-      if (window.scrollY > 300) {
-        setShowScrollBtn(true)
-      } else {
-        setShowScrollBtn(false)
-      }
-
-      // Calculate progress percentage
-      const totalScrollHeight = document.documentElement.scrollHeight - window.innerHeight
-      if (totalScrollHeight > 0) {
-        const percentage = window.scrollY / totalScrollHeight
-        setScrollProgress(percentage)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   return (
     <AuthProvider>
@@ -224,41 +276,7 @@ export default function App() {
           </div>
         </footer>
 
-        {/* Back to Top Floating Button with circular progress */}
-        <button
-          onClick={scrollToTop}
-          aria-label="Kembali ke atas"
-          className={`fixed bottom-16 right-6 z-40 w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md hover:shadow-lg border border-abu-200/50 transition-all duration-300 focus-ring cursor-pointer hover:-translate-y-1 ${
-            showScrollBtn ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'
-          }`}
-        >
-          {/* Circular progress SVG */}
-          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 48 48">
-            {/* Background track circle */}
-            <circle
-              cx="24"
-              cy="24"
-              r="21"
-              fill="transparent"
-              stroke="#F3F4F6"
-              strokeWidth="2.5"
-            />
-            {/* Active progress circle */}
-            <circle
-              cx="24"
-              cy="24"
-              r="21"
-              fill="transparent"
-              stroke="#DC2626"
-              strokeWidth="2.5"
-              strokeDasharray="132"
-              strokeDashoffset={132 - 132 * scrollProgress}
-              strokeLinecap="round"
-              className="transition-all duration-150 ease-out"
-            />
-          </svg>
-          <Icon icon="solar:arrow-up-linear" className="w-5 h-5 text-merah-600 relative z-10" />
-        </button>
+        <BackToTopButton />
 
         {/* Global sticky bottom ticker */}
         <LiveTicker />

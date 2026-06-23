@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { animate } from 'animejs'
 import { Icon } from '@iconify/react'
 
@@ -6,7 +6,7 @@ import { Icon } from '@iconify/react'
  * CountdownTimer — Digital countdown to the RT 03 Independence Day event.
  * Displays days, hours, minutes, seconds with animated digit transitions.
  */
-export default function CountdownTimer() {
+function CountdownTimer() {
   // Target: 1 Agustus 2026, 08:00 WIB (UTC+7)
   const targetDate = new Date('2026-08-17T08:00:00+07:00')
 
@@ -38,12 +38,27 @@ export default function CountdownTimer() {
     seconds: useRef(null),
   }
 
-  // Tick every second
+  // Tick every second, but only update state when the document is visible.
   useEffect(() => {
+    const update = () => setTimeLeft(calculateTimeLeft())
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        update()
+      }
+    }
+
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft())
+      if (document.visibilityState === 'visible') {
+        update()
+      }
     }, 1000)
-    return () => clearInterval(timer)
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [calculateTimeLeft])
 
   // Animate any digit that changed since the last tick
@@ -77,12 +92,12 @@ export default function CountdownTimer() {
   const pad = (n, len = 2) => String(n).padStart(len, '0')
 
   // Digit box configuration for rendering
-  const digits = [
+  const digits = useMemo(() => [
     { key: 'days', label: 'Hari', value: pad(timeLeft.days, 3), ref: digitRefs.days },
     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
-  ]
+  ], [timeLeft])
 
   return (
     <div className="card p-6 md:p-8">
@@ -133,3 +148,5 @@ export default function CountdownTimer() {
     </div>
   )
 }
+
+export default memo(CountdownTimer)

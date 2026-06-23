@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { animate } from 'animejs'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getNormalizedCategory } from './admin/adminUtils'
+
 import { Icon } from '@iconify/react'
 import { getCustomCategories } from './admin/adminUtils'
 
@@ -87,32 +89,11 @@ export default function MedalTable() {
           const { data, error } = await query
 
           if (!error && data) {
-            const getTournamentCategory = (t) => {
-              const cat = t.category || ''
-              if (cat === 'anak_4_6' || cat === '4-6') return 'anak_4_6'
-              if (cat === 'anak_7_12' || cat === '7-12') return 'anak_7_12'
-              if (cat === 'remaja_pria' || cat === 'remaja pria') return 'remaja_pria'
-              if (cat === 'remaja_putri' || cat === 'remaja putri') return 'remaja_putri'
-              if (cat === 'ibu_ibu' || cat === 'ibu-ibu' || cat === 'ibu_individu' || cat === 'ibu_grup') return 'ibu_ibu'
-              if (cat === 'bapak_bapak' || cat === 'bapak-bapak' || cat === 'bapak_individu' || cat === 'bapak_grup') return 'bapak_bapak'
-              if (cat === 'pasangan' || cat === 'segala_umur' || cat === 'remaja_grup' || t.type === 'grup') return 'pasangan'
-
-              const name = (t.name || '').toLowerCase()
-              if (name.includes('4-6') || name.includes('balita')) return 'anak_4_6'
-              if (name.includes('7-12') || name.includes('anak') || name.includes('kelereng') || name.includes('kerupuk')) return 'anak_7_12'
-              if (name.includes('remaja pria') || name.includes('remaja putra') || name.includes('remaja lak')) return 'remaja_pria'
-              if (name.includes('remaja putri') || name.includes('remaja putri') || name.includes('remaja peremp')) return 'remaja_putri'
-              if (name.includes('ibu')) return 'ibu_ibu'
-              if (name.includes('bapak') || name.includes('pria')) return 'bapak_bapak'
-              if (name.includes('pasangan') || name.includes('grup') || t.type === 'grup') return 'pasangan'
-
-              return 'bapak_bapak'
-            }
-
             // Client side filtering for micro-categories
             const filteredData = data.filter((item) => {
               if (selectedCategory === 'semua') return true
-              const cat = getTournamentCategory(item.tournaments || {})
+              const t = item.tournaments || {}
+              const cat = getNormalizedCategory(t.category, t.type, t.name)
               return cat === selectedCategory
             })
 

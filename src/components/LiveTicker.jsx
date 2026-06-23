@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState, useMemo } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 
@@ -13,7 +13,7 @@ import { Icon } from '@iconify/react'
  */
 
 
-export default function LiveTicker() {
+function LiveTicker() {
   const [announcements, setAnnouncements] = useState([])
   const [isPopupOpen, setIsPopupOpen] = useState(false)
 
@@ -89,33 +89,35 @@ export default function LiveTicker() {
 
   // ── Hide when popup is open ──────────────────────────────
   useEffect(() => {
-    const checkPopups = () => {
-      // Find any element that uses fixed inset-0 (standard pattern for popups/modals in this app)
-      const popups = document.querySelectorAll('.fixed.inset-0')
-      setIsPopupOpen(popups.length > 0)
+    const handlePopupOpened = () => setIsPopupOpen(true)
+    const handlePopupClosed = () => setIsPopupOpen(false)
+
+    window.addEventListener('katar_popup_opened', handlePopupOpened)
+    window.addEventListener('katar_popup_closed', handlePopupClosed)
+
+    // Initial state based on existing popups
+    const popups = document.querySelectorAll('.fixed.inset-0')
+    setIsPopupOpen(popups.length > 0)
+
+    return () => {
+      window.removeEventListener('katar_popup_opened', handlePopupOpened)
+      window.removeEventListener('katar_popup_closed', handlePopupClosed)
     }
-
-    // Initial check
-    checkPopups()
-
-    // Observe body for changes in DOM to detect modal open/close
-    const observer = new MutationObserver(checkPopups)
-    observer.observe(document.body, { childList: true, subtree: true })
-
-    return () => observer.disconnect()
   }, [])
 
-  // Don't render until we have announcements, or if a popup is open
-  if (!announcements.length || isPopupOpen) return null
+  const tickerText = useMemo(() => {
+    if (!announcements.length) return ''
 
-  // Build ticker string — repeat if it's too short to prevent jumpy loop on wide screens
-  let repeatedAnnouncements = [...announcements]
-  if (repeatedAnnouncements.length > 0) {
+    let repeatedAnnouncements = [...announcements]
     while (repeatedAnnouncements.join('   ●   ').length < 200) {
       repeatedAnnouncements = [...repeatedAnnouncements, ...announcements]
     }
-  }
-  const tickerText = repeatedAnnouncements.join('   ●   ')
+
+    return repeatedAnnouncements.join('   ●   ')
+  }, [announcements])
+
+  // Don't render until we have announcements, or if a popup is open
+  if (!announcements.length || isPopupOpen) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-merah-700 text-white py-2 overflow-hidden shadow-lg border-t border-white/10" role="marquee" aria-live="polite">
@@ -140,3 +142,5 @@ export default function LiveTicker() {
     </div>
   )
 }
+
+export default memo(LiveTicker)

@@ -3,35 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { generateSlug } from '../lib/slug'
-
-const parseImages = (imageUrl) => {
-  if (!imageUrl) return []
-  
-  const getDirectImageUrl = (url) => {
-    if (!url) return ''
-    const trimmed = url.trim()
-    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
-    if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
-    }
-    return trimmed
-  }
-
-  let urls = []
-  if (imageUrl.startsWith('[') && imageUrl.endsWith(']')) {
-    try {
-      urls = JSON.parse(imageUrl)
-    } catch (e) {
-      console.error('Failed to parse image_url JSON:', e)
-    }
-  } else if (imageUrl.includes(',')) {
-    urls = imageUrl.split(',').map(u => u.trim()).filter(Boolean)
-  } else {
-    urls = [imageUrl.trim()].filter(Boolean)
-  }
-
-  return urls.map(getDirectImageUrl)
-}
+import { parseImages } from '../components/admin/adminUtils'
+import { formatDate } from '../lib/formatUtils'
 
 export default function NewsDetailPage() {
   const { slug } = useParams()
@@ -74,19 +47,6 @@ export default function NewsDetailPage() {
       document.body.classList.remove('lightbox-open')
     }
   }, [activePhotoIndex, goToPrev, goToNext])
-
-  // Format date
-  const formatDate = (dateStr) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    } catch {
-      return ''
-    }
-  }
 
   // Set dynamic title and meta description when article changes
   useEffect(() => {

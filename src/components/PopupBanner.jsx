@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
-export default function PopupBanner() {
+function PopupBanner() {
   const [banner, setBanner] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
   const [animate, setAnimate] = useState(false)
@@ -63,6 +63,16 @@ export default function PopupBanner() {
 
     getActiveBanner()
   }, [])
+
+  // Dispatch popup open/close lifecycle events for global listeners
+  useEffect(() => {
+    if (!isOpen || !banner) return
+
+    window.dispatchEvent(new Event('katar_popup_opened'))
+    return () => {
+      window.dispatchEvent(new Event('katar_popup_closed'))
+    }
+  }, [isOpen, banner])
 
   // Auto-close after 8 seconds once opened
   useEffect(() => {
@@ -166,3 +176,5 @@ export default function PopupBanner() {
     </div>
   )
 }
+
+export default PopupBanner

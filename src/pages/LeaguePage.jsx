@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { animate, createScope } from 'animejs'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import CountdownTimer from '../components/CountdownTimer'
 import ScheduleCard from '../components/ScheduleCard'
 import MedalTable from '../components/MedalTable'
-import { getCustomCategories, validateAgeForCategory } from '../components/admin/adminUtils'
+import { getCustomCategories, getNormalizedCategory, validateAgeForCategory } from '../components/admin/adminUtils'
 
 /**
  * LeaguePage — League & Agenda 17-an RT 03.
@@ -54,6 +54,7 @@ export default function LeaguePage() {
   // Ref for the schedule list — used by createScope for Anime.js cleanup
   const scheduleListRef = useRef(null)
   const scopeRef = useRef(null)
+  const hasAnimatedSchedule = useRef(false)
 
   // ─── Fetch tournament data on mount ─────────────────────────────
   useEffect(() => {
@@ -90,12 +91,11 @@ export default function LeaguePage() {
 
   // ─── Stagger animation on schedule cards after data or filter changes ───────
   useEffect(() => {
-    if (loading || !scheduleListRef.current) return
+    if (loading || !scheduleListRef.current || hasAnimatedSchedule.current) return
 
-    // Create a scope tied to the schedule list container for automatic cleanup
-    scopeRef.current = createScope({ root: scheduleListRef })
+    hasAnimatedSchedule.current = true
+    scopeRef.current = createScope({ root: scheduleListRef.current })
 
-    // Small delay so the DOM has time to paint the cards
     const timer = setTimeout(() => {
       animate('.schedule-card', {
         translateY: [30, 0],
@@ -108,42 +108,22 @@ export default function LeaguePage() {
 
     return () => {
       clearTimeout(timer)
-      // Revert all animations scoped to the list on unmount
       if (scopeRef.current) {
         scopeRef.current.revert()
       }
     }
-  }, [loading, tournaments, activeFilter])
+  }, [loading])
 
-  const getTournamentCategory = (t) => {
-    const cat = t.category || ''
-    if (cat === 'anak_4_6' || cat === '4-6') return 'anak_4_6'
-    if (cat === 'anak_7_12' || cat === '7-12') return 'anak_7_12'
-    if (cat === 'remaja_pria' || cat === 'remaja pria') return 'remaja_pria'
-    if (cat === 'remaja_putri' || cat === 'remaja putri') return 'remaja_putri'
-    if (cat === 'ibu_ibu' || cat === 'ibu-ibu' || cat === 'ibu_individu' || cat === 'ibu_grup') return 'ibu_ibu'
-    if (cat === 'bapak_bapak' || cat === 'bapak-bapak' || cat === 'bapak_individu' || cat === 'bapak_grup') return 'bapak_bapak'
-    if (cat === 'pasangan' || cat === 'segala_umur' || cat === 'remaja_grup' || t.type === 'grup') return 'pasangan'
+  const filteredTournaments = useMemo(
+    () => tournaments.filter((t) => {
+      if (activeFilter === 'semua') return true
+      const cat = getNormalizedCategory(t.category, t.type, t.name)
+      return cat === activeFilter
+    }),
+    [tournaments, activeFilter]
+  )
 
-    const name = (t.name || '').toLowerCase()
-    if (name.includes('4-6') || name.includes('balita')) return 'anak_4_6'
-    if (name.includes('7-12') || name.includes('anak') || name.includes('kelereng') || name.includes('kerupuk')) return 'anak_7_12'
-    if (name.includes('remaja pria') || name.includes('remaja putra') || name.includes('remaja lak')) return 'remaja_pria'
-    if (name.includes('remaja putri') || name.includes('remaja putri') || name.includes('remaja peremp')) return 'remaja_putri'
-    if (name.includes('ibu')) return 'ibu_ibu'
-    if (name.includes('bapak') || name.includes('pria')) return 'bapak_bapak'
-    if (name.includes('pasangan') || name.includes('grup') || t.type === 'grup') return 'pasangan'
-
-    return 'bapak_bapak'
-  }
-
-  const filteredTournaments = tournaments.filter((t) => {
-    if (activeFilter === 'semua') return true
-    const cat = getTournamentCategory(t)
-    return cat === activeFilter
-  })
-
-  const filterOptions = [
+  const filterOptions = useMemo(() => [
     { id: 'semua', label: 'Semua Lomba', icon: 'solar:list-bold-duotone' },
     { id: 'anak_4_6', label: getCatLabel('anak_4_6', 'Anak 4-6'), icon: 'solar:user-bold-duotone' },
     { id: 'anak_7_12', label: getCatLabel('anak_7_12', 'Anak 7-12'), icon: 'solar:user-bold-duotone' },
@@ -152,7 +132,7 @@ export default function LeaguePage() {
     { id: 'ibu_ibu', label: getCatLabel('ibu_ibu', 'Ibu-Ibu'), icon: 'solar:user-bold-duotone' },
     { id: 'bapak_bapak', label: getCatLabel('bapak_bapak', 'Bapak-Bapak'), icon: 'solar:user-bold-duotone' },
     { id: 'pasangan', label: getCatLabel('pasangan', 'Pasangan'), icon: 'solar:users-group-two-rounded-bold-duotone' },
-  ]
+  ], [customCategories])
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8 md:py-12">
@@ -291,7 +271,7 @@ export default function LeaguePage() {
                 className="schedule-card"
                 style={{ opacity: 0 }}
               >
-                <ScheduleCard tournament={tournament} onRegister={handleRegisterClick} />
+                <ScheduleCard tournament={tournament} customCategories={customCategories} />
               </div>
             ))}
           </div>

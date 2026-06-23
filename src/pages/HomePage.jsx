@@ -24,6 +24,9 @@ export default function HomePage() {
   const scope = useRef(null)
   const quoteRef = useRef(null)
   const quoteAnimated = useRef(false)
+  const heroTitleRef = useRef(null)
+  const heroWelcomeRef = useRef(null)
+  const heroButtonsRef = useRef(null)
 
   // Accordion: only one can be open at a time
   const [activeAccordion, setActiveAccordion] = useState(null)
@@ -33,30 +36,12 @@ export default function HomePage() {
   useEffect(() => {
     document.title = 'Karang Taruna RT 02/03 - Beranda'
     scope.current = createScope({ root: root.current }).add(() => {
-      animate('.hero-title', {
+      animate([heroTitleRef.current, heroWelcomeRef.current, heroButtonsRef.current], {
+        opacity: [0, 1],
         translateY: [20, 0],
-        opacity: [0, 1],
-        filter: ['blur(6px)', 'blur(0px)'],
-        duration: 1000,
-        ease: 'outExpo',
-      })
-
-      animate('.hero-welcome', {
-        translateY: [15, 0],
-        opacity: [0, 1],
-        filter: ['blur(4px)', 'blur(0px)'],
-        duration: 800,
-        delay: 350,
-        ease: 'outExpo',
-      })
-
-      animate('.hero-buttons', {
-        translateY: [10, 0],
-        opacity: [0, 1],
-        filter: ['blur(3px)', 'blur(0px)'],
-        duration: 800,
-        delay: 600,
-        ease: 'outExpo',
+        duration: 900,
+        delay: (el, i) => i * 175,
+        easing: 'easeOutExpo',
       })
     })
 
@@ -66,8 +51,8 @@ export default function HomePage() {
   // Fallback: ensure hero elements become visible after animation time
   useEffect(() => {
     const timer = setTimeout(() => {
-      const els = document.querySelectorAll('.hero-title, .hero-welcome, .hero-buttons')
-      els.forEach(el => {
+      [heroTitleRef.current, heroWelcomeRef.current, heroButtonsRef.current].forEach((el) => {
+        if (!el) return
         el.style.opacity = '1'
         el.style.transform = 'none'
         el.style.filter = 'none'
@@ -138,6 +123,7 @@ export default function HomePage() {
           style={{ zIndex: 2 }}
         >
           <h1
+            ref={heroTitleRef}
             className="hero-title font-heading text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 md:mb-5 uppercase tracking-wide"
             style={{ 
               opacity: 0, 
@@ -152,6 +138,7 @@ export default function HomePage() {
           </h1>
 
           <p
+            ref={heroWelcomeRef}
             className="hero-welcome text-sm md:text-lg lg:text-xl font-normal mb-6 md:mb-8 max-w-3xl leading-relaxed text-white/85"
             style={{ 
               opacity: 0, 
@@ -165,7 +152,7 @@ export default function HomePage() {
           </p>
 
           {/* CTA Buttons — Berita & Organisasi */}
-          <div className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0" style={{ opacity: 0, filter: 'blur(3px)' }}>
+          <div ref={heroButtonsRef} className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0" style={{ opacity: 0, filter: 'blur(3px)' }}>
             <Link
               to="/news"
               className="group relative overflow-hidden rounded-xl px-4 py-2.5 sm:px-8 sm:py-3 font-bold text-merah-700 flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-xl hover:scale-105 text-sm sm:text-base flex-1 sm:flex-none max-w-[150px] sm:max-w-none"

@@ -1,40 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { animate } from 'animejs'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
-
-const parseImages = (imageUrl) => {
-  if (!imageUrl) return []
-  
-  const getDirectImageUrl = (url) => {
-    if (!url) return ''
-    const trimmed = url.trim()
-    const match = trimmed.match(/(?:drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=|uc\?export=view&id=|uc\?export=download&id=)|lh3\.googleusercontent\.com\/d\/|docs\.google\.com\/uc\?export=download&id=)([a-zA-Z0-9_-]{25,})/i)
-    if (match && match[1]) {
-      return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1200`
-    }
-    return trimmed
-  }
-
-  let urls = []
-  if (imageUrl.startsWith('[') && imageUrl.endsWith(']')) {
-    try {
-      urls = JSON.parse(imageUrl)
-    } catch (e) {
-      console.error('Failed to parse image_url JSON:', e)
-    }
-  } else if (imageUrl.includes(',')) {
-    urls = imageUrl.split(',').map(u => u.trim()).filter(Boolean)
-  } else {
-    urls = [imageUrl.trim()].filter(Boolean)
-  }
-
-  return urls.map(getDirectImageUrl)
-}
+import { parseImages } from './admin/adminUtils'
 
 
-export default function MediaPreview() {
+function MediaPreview() {
   const [photos, setPhotos] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const sectionRef = useRef(null)
@@ -222,3 +194,5 @@ export default function MediaPreview() {
     </section>
   )
 }
+
+export default memo(MediaPreview)

@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { animate } from 'animejs'
+import { memo, useMemo } from 'react'
 import { Icon } from '@iconify/react'
-import { getCustomCategories } from './admin/adminUtils'
+import { getNormalizedCategory } from './admin/adminUtils'
 
 /**
  * ScheduleCard — Displays a single tournament schedule entry.
@@ -14,34 +13,20 @@ import { getCustomCategories } from './admin/adminUtils'
  * @param {string} props.tournament.location - Venue / location name
  * @param {string} props.tournament.schedule - ISO date string for the event
  */
-export default function ScheduleCard({ tournament, onRegister }) {
-  const cardRef = useRef(null)
-
-  // Entrance animation — fade in with slight upward slide
-  useEffect(() => {
-    if (cardRef.current) {
-      animate(cardRef.current, {
-        opacity: [0, 1],
-        translateY: [20, 0],
-        duration: 500,
-        ease: 'outCubic',
-      })
-    }
-  }, [])
-
-  const [customCategories, setCustomCategories] = useState(getCustomCategories())
-
-  useEffect(() => {
-    const handleCatsUpdate = () => {
-      setCustomCategories(getCustomCategories())
-    }
-    window.addEventListener('katar_categories_updated', handleCatsUpdate)
-    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
-  }, [])
-
+function ScheduleCard({ tournament, customCategories = [] }) {
   const getCatLabel = (id, fallback) => {
     return customCategories.find(c => c.id === id)?.name || fallback
   }
+
+  const resolvedCategory = useMemo(
+    () => getNormalizedCategory(tournament.category, tournament.type, tournament.name),
+    [tournament.category, tournament.type, tournament.name]
+  )
+
+  const formattedSchedule = useMemo(
+    () => formatScheduleRange(tournament.schedule, tournament.end_time),
+    [tournament.schedule, tournament.end_time]
+  )
 
   // ─── Status badge config ──────────────────────────────────────
   const statusConfig = {
@@ -121,30 +106,7 @@ export default function ScheduleCard({ tournament, onRegister }) {
     selesai: 'border-l-merah-200',
   }
 
-  const getTournamentCategory = (t) => {
-    const cat = t.category || ''
-    if (cat === 'anak_4_6' || cat === '4-6') return 'anak_4_6'
-    if (cat === 'anak_7_12' || cat === '7-12') return 'anak_7_12'
-    if (cat === 'remaja_pria' || cat === 'remaja pria') return 'remaja_pria'
-    if (cat === 'remaja_putri' || cat === 'remaja putri') return 'remaja_putri'
-    if (cat === 'ibu_ibu' || cat === 'ibu-ibu' || cat === 'ibu_individu' || cat === 'ibu_grup') return 'ibu_ibu'
-    if (cat === 'bapak_bapak' || cat === 'bapak-bapak' || cat === 'bapak_individu' || cat === 'bapak_grup') return 'bapak_bapak'
-    if (cat === 'pasangan' || cat === 'segala_umur' || cat === 'remaja_grup' || t.type === 'grup') return 'pasangan'
-
-    const name = (t.name || '').toLowerCase()
-    if (name.includes('4-6') || name.includes('balita')) return 'anak_4_6'
-    if (name.includes('7-12') || name.includes('anak') || name.includes('kelereng') || name.includes('kerupuk')) return 'anak_7_12'
-    if (name.includes('remaja pria') || name.includes('remaja putra') || name.includes('remaja lak')) return 'remaja_pria'
-    if (name.includes('remaja putri') || name.includes('remaja putri') || name.includes('remaja peremp')) return 'remaja_putri'
-    if (name.includes('ibu')) return 'ibu_ibu'
-    if (name.includes('bapak') || name.includes('pria')) return 'bapak_bapak'
-    if (name.includes('pasangan') || name.includes('grup') || t.type === 'grup') return 'pasangan'
-
-    return 'bapak_bapak'
-  }
-
   const status = statusConfig[tournament.status] || statusConfig.belum
-  const resolvedCategory = getTournamentCategory(tournament)
   const category = detailedCategoryConfig[resolvedCategory] || categoryConfig[tournament.type] || categoryConfig.individu
   const borderColor = borderColorMap[tournament.status] || 'border-l-abu-300'
 
@@ -198,21 +160,17 @@ export default function ScheduleCard({ tournament, onRegister }) {
     }
   }
 
-  const tournamentDate = tournament.schedule ? new Date(tournament.schedule) : null
-  const now = new Date()
-  const startOfAugust = tournamentDate ? new Date(tournamentDate.getFullYear(), 7, 1) : null
-  const isRegistrationOpen = tournamentDate ? now >= startOfAugust : false
+
 
   return (
     <div
-      ref={cardRef}
-      className={`card p-4 md:p-5 border-l-4 ${borderColor} opacity-0 hover-lift`}
+      className={`card p-4 md:p-5 border-l-4 ${borderColor} hover-lift`}
       style={{ willChange: 'transform, opacity' }}
     >
       {/* Date / Time */}
       <p className="text-sm text-abu-500 flex items-center gap-1.5 mb-2">
         <Icon icon="solar:calendar-date-bold-duotone" className="w-4 h-4 text-abu-400" />
-        {formatScheduleRange(tournament.schedule, tournament.end_time)}
+        {formattedSchedule}
       </p>
 
       {/* Tournament name */}
@@ -252,3 +210,5 @@ export default function ScheduleCard({ tournament, onRegister }) {
     </div>
   )
 }
+
+export default memo(ScheduleCard)

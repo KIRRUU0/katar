@@ -3,16 +3,6 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 export const FALLBACK_YEARS = [2026, 2025, 2024]
 export const DEMO_TOURNAMENTS = []
 
-export const CATEGORIES = [
-  { id: 'anak_4_6', name: 'Anak-Anak 4-6 Tahun', type: 'individu' },
-  { id: 'anak_7_12', name: 'Anak-Anak 7-12 Tahun', type: 'individu' },
-  { id: 'remaja_pria', name: 'Remaja Pria', type: 'individu' },
-  { id: 'remaja_putri', name: 'Remaja Putri', type: 'individu' },
-  { id: 'ibu_ibu', name: 'Ibu-Ibu', type: 'individu' },
-  { id: 'bapak_bapak', name: 'Bapak-Bapak', type: 'individu' },
-  { id: 'pasangan', name: 'Pasangan', type: 'grup' },
-]
-
 export const getCustomCategories = () => {
   const defaultCats = [
     { id: 'anak_4_6', name: 'Anak-Anak 4-6 Tahun', type: 'individu' },
@@ -163,7 +153,7 @@ export const getNormalizedCategory = (category, type, name = '') => {
   if (lowerName.includes('4-6') || lowerName.includes('balita')) return 'anak_4_6'
   if (lowerName.includes('7-12') || lowerName.includes('anak')) return 'anak_7_12'
   if (lowerName.includes('remaja pria') || lowerName.includes('remaja putra')) return 'remaja_pria'
-  if (lowerName.includes('remaja putri') || lowerName.includes('remaja putri')) return 'remaja_putri'
+  if (lowerName.includes('remaja putri') || lowerName.includes('remaja wanita')) return 'remaja_putri'
   if (lowerName.includes('ibu')) return 'ibu_ibu'
   if (lowerName.includes('bapak') || lowerName.includes('pria')) return 'bapak_bapak'
   if (lowerName.includes('pasangan') || lowerName.includes('grup') || type === 'grup') return 'pasangan'
