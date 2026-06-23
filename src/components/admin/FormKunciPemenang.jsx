@@ -59,7 +59,7 @@ export default function FormKunciPemenang({ tournaments, onTournamentUpdated }) 
       setToast({ message: 'Pilih semua juara (1, 2, 3) terlebih dahulu.', type: 'error' })
       return
     }
-    // Prevent duplicate selections
+    // Prevent duplicate selections in the same tournament
     if (new Set([winners.gold, winners.silver, winners.bronze]).size < 3) {
       setToast({ message: 'Juara 1, 2, dan 3 harus berbeda.', type: 'error' })
       return
@@ -69,19 +69,104 @@ export default function FormKunciPemenang({ tournaments, onTournamentUpdated }) 
     setToast({ message: '', type: '' })
 
     try {
+      const goldEntry = entries.find(e => e.id === winners.gold)
+      const silverEntry = entries.find(e => e.id === winners.silver)
+      const bronzeEntry = entries.find(e => e.id === winners.bronze)
+
+      if (!goldEntry || !silverEntry || !bronzeEntry) {
+        setToast({ message: 'Juara yang dipilih tidak valid.', type: 'error' })
+        return
+      }
+
+      const goldName = goldEntry.name || goldEntry.team_name
+      const silverName = silverEntry.name || silverEntry.team_name
+      const bronzeName = bronzeEntry.name || bronzeEntry.team_name
+
+      // Check if Juara 1 winner has already won Juara 1 in another tournament this year
+      let alreadyWonGold = false
       if (!isSupabaseConfigured()) {
-        await new Promise((r) => setTimeout(r, 800))
+        const localWinners = JSON.parse(localStorage.getItem('katar_winners') || '[]')
+        const localTourneys = JSON.parse(localStorage.getItem('katar_tournaments') || '[]')
+        const targetYear = selected ? selected.year : new Date().getFullYear()
+
+        const existingGoldWins = localWinners.filter(w => {
+          const t = localTourneys.find(lt => lt.id === w.tournament_id)
+          return w.rank === 1 && t && t.year === targetYear
+        })
+
+        if (existingGoldWins.some(w => w.winner_name_or_team === goldName)) {
+          alreadyWonGold = true
+        }
       } else {
-        const entityType = selected?.type === 'individu' ? 'participant' : 'team'
-        // Insert winners
+        const { data: existingWins, error: fetchErr } = await supabase
+          .from('winners')
+          .select('winner_name_or_team, tournaments!inner(year_id)')
+          .eq('rank', 1)
+          .eq('tournaments.year_id', selected?.year_id)
+        
+        if (fetchErr) throw fetchErr
+
+        if (existingWins && existingWins.some(w => w.winner_name_or_team === goldName)) {
+          alreadyWonGold = true
+        }
+      }
+
+      if (alreadyWonGold) {
+        setToast({ 
+          message: `Gagal: Peserta/Tim "${goldName}" sudah pernah mendapatkan Juara 1 di lomba lain pada tahun ini.`, 
+          type: 'error' 
+        })
+        return
+      }
+
+      if (!isSupabaseConfigured()) {
+        // Save to local storage for demo mode
+        const localWinners = JSON.parse(localStorage.getItem('katar_winners') || '[]')
+        const newWinners = [
+          {
+            id: 'winner-' + Date.now() + '-1',
+            tournament_id: selectedId,
+            rank: 1,
+            winner_name_or_team: goldName,
+            origin_block: null,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'winner-' + Date.now() + '-2',
+            tournament_id: selectedId,
+            rank: 2,
+            winner_name_or_team: silverName,
+            origin_block: null,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 'winner-' + Date.now() + '-3',
+            tournament_id: selectedId,
+            rank: 3,
+            winner_name_or_team: bronzeName,
+            origin_block: null,
+            created_at: new Date().toISOString()
+          }
+        ]
+        localStorage.setItem('katar_winners', JSON.stringify([...localWinners, ...newWinners]))
+
+        // Update local tournament status
+        let localTourneys = JSON.parse(localStorage.getItem('katar_tournaments') || '[]')
+        const idx = localTourneys.findIndex(t => t.id === selectedId)
+        if (idx !== -1) {
+          localTourneys[idx].status = 'selesai'
+          localStorage.setItem('katar_tournaments', JSON.stringify(localTourneys))
+        }
+      } else {
+        // Insert winners in Supabase database using correct schema columns
         const { error: winErr } = await supabase.from('winners').insert([
-          { tournament_id: selectedId, [`${entityType}_id`]: winners.gold, rank: 1 },
-          { tournament_id: selectedId, [`${entityType}_id`]: winners.silver, rank: 2 },
-          { tournament_id: selectedId, [`${entityType}_id`]: winners.bronze, rank: 3 },
+          { tournament_id: selectedId, rank: 1, winner_name_or_team: goldName, origin_block: null },
+          { tournament_id: selectedId, rank: 2, winner_name_or_team: silverName, origin_block: null },
+          { tournament_id: selectedId, rank: 3, winner_name_or_team: bronzeName, origin_block: null },
         ])
         if (winErr) throw winErr
 
-        // Update tournament status
+        // Update tournament status to selesai
         const { error: updErr } = await supabase
           .from('tournaments')
           .update({ status: 'selesai' })
@@ -159,7 +244,7 @@ export default function FormKunciPemenang({ tournaments, onTournamentUpdated }) 
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-4 pt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3">
                 {renderWinnerSelect('Juara 1', 'solar:cup-first-bold', 'text-amber-500', 'gold')}
                 {renderWinnerSelect('Juara 2', 'solar:cup-first-bold', 'text-slate-400', 'silver')}
                 {renderWinnerSelect('Juara 3', 'solar:cup-first-bold', 'text-amber-700', 'bronze')}

@@ -2,11 +2,21 @@ import { useState, useEffect } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
-import { CATEGORIES } from './adminUtils'
+import { getCustomCategories, getCategoryName } from './adminUtils'
 
 export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })
+  const [categories, setCategories] = useState(getCustomCategories())
+
+  // Listen to custom categories updates
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
   
   // Edit modal state
   const [editingTournament, setEditingTournament] = useState(null)
@@ -14,10 +24,11 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
     id: '',
     name: '',
     type: 'individu',
-    category: 'anak-anak',
+    category: 'anak_4_6',
     status: 'belum',
     location: '',
     schedule: '',
+    endTime: '',
     pj: '',
     year_id: '',
     year_number: 2026
@@ -43,10 +54,11 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
       id: t.id,
       name: t.name,
       type: t.type,
-      category: t.category || 'anak-anak',
+      category: t.category || 'anak_4_6',
       status: t.status,
       location: t.location || '',
       schedule: t.schedule ? t.schedule.substring(0, 16) : '',
+      endTime: t.end_time ? t.end_time.substring(0, 16) : '',
       pj: t.pj || '',
       year_id: yearObj ? yearObj.id : (t.year_id || ''),
       year_number: t.year
@@ -58,7 +70,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
     setEditForm(prev => {
       const updated = { ...prev, [field]: value }
       if (field === 'category') {
-        const catObj = CATEGORIES.find(c => c.id === value)
+        const catObj = categories.find(c => c.id === value)
         if (catObj) {
           updated.type = catObj.type
         }
@@ -96,6 +108,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
             status: editForm.status,
             location: editForm.location,
             schedule: editForm.schedule ? new Date(editForm.schedule).toISOString() : null,
+            end_time: editForm.endTime ? new Date(editForm.endTime).toISOString() : null,
             pj: editForm.pj || null,
             year: editForm.year_number
           }
@@ -114,6 +127,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
             t_status: editForm.status,
             t_location: editForm.location,
             t_schedule: editForm.schedule ? new Date(editForm.schedule).toISOString() : null,
+            t_end_time: editForm.endTime ? new Date(editForm.endTime).toISOString() : null,
             t_pj: editForm.pj || null,
             t_year_id: editForm.year_id
           })
@@ -129,6 +143,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
               status: editForm.status,
               location: editForm.location,
               schedule: editForm.schedule ? new Date(editForm.schedule).toISOString() : null,
+              end_time: editForm.endTime ? new Date(editForm.endTime).toISOString() : null,
               pj: editForm.pj || null,
               year_id: editForm.year_id
             })
@@ -212,7 +227,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                   <td className="p-3 text-abu-600 font-medium">{t.year}</td>
                   <td className="p-3">
                     <span className="capitalize text-xs font-bold text-merah-600 bg-merah-50 px-2 py-0.5 rounded-full">
-                      {t.category ? t.category.replace('_', ' ') : t.type}
+                      {t.category ? getCategoryName(t.category) : t.type}
                     </span>
                   </td>
                   <td className="p-3 text-abu-600">{t.location || '-'}</td>
@@ -312,7 +327,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                      onChange={(e) => handleEditChange('category', e.target.value)}
                      required
                   >
-                    {CATEGORIES.map(cat => (
+                    {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
@@ -356,13 +371,25 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                     <option value="selesai">Selesai</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-abu-700 mb-1">Jadwal Lomba</label>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Waktu Mulai</label>
                   <input
                     type="datetime-local"
                     className="form-input"
                     value={editForm.schedule}
                     onChange={(e) => handleEditChange('schedule', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Waktu Selesai</label>
+                  <input
+                    type="datetime-local"
+                    className="form-input"
+                    value={editForm.endTime}
+                    onChange={(e) => handleEditChange('endTime', e.target.value)}
                   />
                 </div>
               </div>

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   status TEXT NOT NULL DEFAULT 'belum' CHECK (status IN ('belum', 'jalan', 'selesai')),
   location TEXT,
   schedule TIMESTAMPTZ,
+  end_time TIMESTAMPTZ,
   pj TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -326,3 +327,44 @@ ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
 -- Policies
 CREATE POLICY "Public insert page_views" ON page_views FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "Admin read page_views" ON page_views FOR SELECT TO authenticated USING (true);
+
+-- 14. POPUP BANNERS TABLE (Announcement Banner Modal)
+CREATE TABLE IF NOT EXISTS popup_banners (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  image_url TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  ratio TEXT NOT NULL DEFAULT 'horizontal' CHECK (ratio IN ('horizontal', 'vertical')),
+  link_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE popup_banners ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Public read popup_banners" ON popup_banners FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Admin insert popup_banners" ON popup_banners FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Admin update popup_banners" ON popup_banners FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admin delete popup_banners" ON popup_banners FOR DELETE TO authenticated USING (true);
+
+-- Realtime Publication
+ALTER PUBLICATION supabase_realtime ADD TABLE popup_banners;
+
+-- 15. CATEGORY SETTINGS TABLE (Custom Category Age Ranges)
+CREATE TABLE IF NOT EXISTS category_settings (
+  category_id TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE category_settings ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Public read category_settings" ON category_settings FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Admin write category_settings" ON category_settings FOR ALL TO authenticated USING (true);
+
+-- Realtime Publication
+ALTER PUBLICATION supabase_realtime ADD TABLE category_settings;
+
+

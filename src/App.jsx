@@ -13,6 +13,8 @@ import NewsListPage from './pages/NewsListPage'
 import OrgPage from './pages/OrgPage'
 import MediaPage from './pages/MediaPage'
 import { recordPageView } from './lib/analytics'
+import PopupBanner from './components/PopupBanner'
+import { supabase, isSupabaseConfigured } from './lib/supabase'
 
 /**
  * PageTransition — Animates page entrance on route change (fade-in)
@@ -56,6 +58,30 @@ export default function App() {
     recordPageView()
   }, [])
 
+  // Sync custom category settings from Supabase on mount
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+    const syncCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('category_settings')
+          .select('*')
+        if (!error && data && data.length > 0) {
+          const list = data.map(item => ({
+            id: item.category_id,
+            name: item.display_name
+          }))
+          localStorage.setItem('katar_custom_categories', JSON.stringify(list))
+          // Trigger event in case components have already loaded default names
+          window.dispatchEvent(new Event('katar_categories_updated'))
+        }
+      } catch (err) {
+        console.warn('Failed to sync categories:', err)
+      }
+    }
+    syncCategories()
+  }, [])
+
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -93,6 +119,9 @@ export default function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-abu-50 pb-10">
+        {/* Banner Announcement Popup */}
+        <PopupBanner />
+
         {/* Persistent navigation */}
         <Navbar />
 

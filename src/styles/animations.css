@@ -29,3 +29,14 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
 }
+
+/* Popup banner progress timer */
+@keyframes popup-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.animate-popup-progress {
+  animation: popup-progress 8s linear forwards;
+}
+

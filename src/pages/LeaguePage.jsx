@@ -5,6 +5,7 @@ import { Icon } from '@iconify/react'
 import CountdownTimer from '../components/CountdownTimer'
 import ScheduleCard from '../components/ScheduleCard'
 import MedalTable from '../components/MedalTable'
+import { getCustomCategories, validateAgeForCategory } from '../components/admin/adminUtils'
 
 /**
  * LeaguePage — League & Agenda 17-an RT 03.
@@ -24,6 +25,19 @@ export default function LeaguePage() {
   const [toast, setToast] = useState({ message: '', type: '' })
   const [activeFilter, setActiveFilter] = useState('semua')
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false)
+  const [customCategories, setCustomCategories] = useState(getCustomCategories())
+
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCustomCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
+
+  const getCatLabel = (id, fallback) => {
+    return customCategories.find(c => c.id === id)?.name || fallback
+  }
 
   const handleRegisterClick = (tournament) => {
     setActiveRegisterTournament(tournament)
@@ -131,13 +145,13 @@ export default function LeaguePage() {
 
   const filterOptions = [
     { id: 'semua', label: 'Semua Lomba', icon: 'solar:list-bold-duotone' },
-    { id: 'anak_4_6', label: 'Anak 4-6', icon: 'solar:user-bold-duotone' },
-    { id: 'anak_7_12', label: 'Anak 7-12', icon: 'solar:user-bold-duotone' },
-    { id: 'remaja_pria', label: 'Remaja Pria', icon: 'solar:user-bold-duotone' },
-    { id: 'remaja_putri', label: 'Remaja Putri', icon: 'solar:user-bold-duotone' },
-    { id: 'ibu_ibu', label: 'Ibu-Ibu', icon: 'solar:user-bold-duotone' },
-    { id: 'bapak_bapak', label: 'Bapak-Bapak', icon: 'solar:user-bold-duotone' },
-    { id: 'pasangan', label: 'Pasangan', icon: 'solar:users-group-two-rounded-bold-duotone' },
+    { id: 'anak_4_6', label: getCatLabel('anak_4_6', 'Anak 4-6'), icon: 'solar:user-bold-duotone' },
+    { id: 'anak_7_12', label: getCatLabel('anak_7_12', 'Anak 7-12'), icon: 'solar:user-bold-duotone' },
+    { id: 'remaja_pria', label: getCatLabel('remaja_pria', 'Remaja Pria'), icon: 'solar:user-bold-duotone' },
+    { id: 'remaja_putri', label: getCatLabel('remaja_putri', 'Remaja Putri'), icon: 'solar:user-bold-duotone' },
+    { id: 'ibu_ibu', label: getCatLabel('ibu_ibu', 'Ibu-Ibu'), icon: 'solar:user-bold-duotone' },
+    { id: 'bapak_bapak', label: getCatLabel('bapak_bapak', 'Bapak-Bapak'), icon: 'solar:user-bold-duotone' },
+    { id: 'pasangan', label: getCatLabel('pasangan', 'Pasangan'), icon: 'solar:users-group-two-rounded-bold-duotone' },
   ]
 
   return (
@@ -347,6 +361,13 @@ function RegistrationModal({ tournament, onClose, onRegisterSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!name.trim() || !age) return
+
+    const validation = validateAgeForCategory(age, tournament.category)
+    if (!validation.valid) {
+      setErrorMsg(validation.message)
+      return
+    }
+
     setSubmitting(true)
     setErrorMsg('')
 

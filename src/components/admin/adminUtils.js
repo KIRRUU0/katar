@@ -13,6 +13,42 @@ export const CATEGORIES = [
   { id: 'pasangan', name: 'Pasangan', type: 'grup' },
 ]
 
+export const getCustomCategories = () => {
+  const defaultCats = [
+    { id: 'anak_4_6', name: 'Anak-Anak 4-6 Tahun', type: 'individu' },
+    { id: 'anak_7_12', name: 'Anak-Anak 7-12 Tahun', type: 'individu' },
+    { id: 'remaja_pria', name: 'Remaja Pria', type: 'individu' },
+    { id: 'remaja_putri', name: 'Remaja Putri', type: 'individu' },
+    { id: 'ibu_ibu', name: 'Ibu-Igu', type: 'individu' },
+    { id: 'bapak_bapak', name: 'Bapak-Bapak', type: 'individu' },
+    { id: 'pasangan', name: 'Pasangan', type: 'grup' },
+  ]
+  
+  // Fix typo in Ibu-Igu to Ibu-Ibu
+  defaultCats[4].name = 'Ibu-Ibu'
+  
+  const local = localStorage.getItem('katar_custom_categories')
+  if (local) {
+    try {
+      const parsed = JSON.parse(local)
+      return defaultCats.map(cat => {
+        const found = parsed.find(p => p.id === cat.id || p.category_id === cat.id)
+        return found ? { ...cat, name: found.name || found.display_name } : cat
+      })
+    } catch (e) {
+      console.warn('Failed to parse katar_custom_categories:', e)
+      return defaultCats
+    }
+  }
+  return defaultCats
+}
+
+export const getCategoryName = (categoryId) => {
+  const categories = getCustomCategories()
+  const found = categories.find(c => c.id === categoryId)
+  return found ? found.name : categoryId
+}
+
 export const uploadImage = async (file) => {
   if (!isSupabaseConfigured()) {
     return new Promise((resolve, reject) => {
@@ -139,3 +175,81 @@ export const syncAllExistingNewsImages = async () => {
   // No-op: news images are dynamically merged on the client-side public page
   console.log('syncAllExistingNewsImages: News and media are merged dynamically on the client side.')
 }
+
+export const validateAgeForCategory = (ageStr, categoryId) => {
+  if (!categoryId) return { valid: true }
+  
+  const age = parseInt(ageStr, 10)
+  if (isNaN(age)) return { valid: false, message: 'Umur harus berupa angka valid.' }
+
+  const customCategories = getCustomCategories()
+  const categoryObj = customCategories.find(c => c.id === categoryId)
+  if (!categoryObj) return { valid: true }
+
+  const categoryName = categoryObj.name || ''
+
+  // 1. Try to parse "min-max" pattern, e.g., "3-5 Tahun", "7-12", "4 - 6"
+  const rangeMatch = categoryName.match(/(\d+)\s*[-–—]\s*(\d+)/)
+  if (rangeMatch) {
+    const min = parseInt(rangeMatch[1], 10)
+    const max = parseInt(rangeMatch[2], 10)
+    if (age < min || age > max) {
+      return { 
+        valid: false, 
+        message: `Umur tidak sesuai kategori! Kategori "${categoryName}" hanya untuk usia ${min} sampai ${max} tahun.` 
+      }
+    }
+    return { valid: true }
+  }
+
+  // 2. Try to parse "maksimal X" or "X ke bawah" or "<= X"
+  const maxMatch = categoryName.match(/(?:maksimal|maks|ke bawah|s\/d|<=|<)\s*(\d+)/i)
+  if (maxMatch) {
+    const max = parseInt(maxMatch[1], 10)
+    if (age > max) {
+      return { 
+        valid: false, 
+        message: `Umur tidak sesuai kategori! Kategori "${categoryName}" maksimal berusia ${max} tahun.` 
+      }
+    }
+    return { valid: true }
+  }
+
+  // 3. Try to parse "minimal X" or "X ke atas" or ">= X"
+  const minMatch = categoryName.match(/(?:minimal|min|ke atas|>=|>)\s*(\d+)/i)
+  if (minMatch) {
+    const min = parseInt(minMatch[1], 10)
+    if (age < min) {
+      return { 
+        valid: false, 
+        message: `Umur tidak sesuai kategori! Kategori "${categoryName}" minimal berusia ${min} tahun.` 
+      }
+    }
+    return { valid: true }
+  }
+
+  // 4. Default fallbacks based on category ID if parsing fails
+  let minFallback = null
+  let maxFallback = null
+  if (categoryId === 'anak_4_6') {
+    minFallback = 4; maxFallback = 6;
+  } else if (categoryId === 'anak_7_12') {
+    minFallback = 7; maxFallback = 12;
+  } else if (categoryId === 'remaja_pria' || categoryId === 'remaja_putri') {
+    minFallback = 13; maxFallback = 19;
+  } else if (categoryId === 'ibu_ibu' || categoryId === 'bapak_bapak') {
+    minFallback = 20; maxFallback = 120;
+  }
+
+  if (minFallback !== null && maxFallback !== null) {
+    if (age < minFallback || age > maxFallback) {
+      return {
+        valid: false,
+        message: `Umur tidak sesuai kategori! Kategori "${categoryName}" hanya untuk usia ${minFallback} sampai ${maxFallback} tahun.`
+      }
+    }
+  }
+
+  return { valid: true }
+}
+

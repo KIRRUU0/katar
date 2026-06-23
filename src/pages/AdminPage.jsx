@@ -13,6 +13,9 @@ import FormKelolaMedia from '../components/admin/FormKelolaMedia'
 import FormDaftarLomba from '../components/admin/FormDaftarLomba'
 import FormKelolaOrganisasi from '../components/admin/FormKelolaOrganisasi'
 import FormKelolaTicker from '../components/admin/FormKelolaTicker'
+import FormKelolaBanner from '../components/admin/FormKelolaBanner'
+import FormEditKategori from '../components/admin/FormEditKategori'
+
 
 import { DEMO_TOURNAMENTS, syncAllExistingNewsImages } from '../components/admin/adminUtils'
 
@@ -91,14 +94,14 @@ const seedDemoParticipantData = () => {
   // If empty or only default empty arrays, seed them
   if (parsedTourneys.length === 0) {
     const mockTourneys = [
-      { id: 't-futsal-2026', name: 'Lomba Futsal RT 02', status: 'berjalan', year: 2026 },
-      { id: 't-catur-2026', name: 'Lomba Catur Warga', status: 'berjalan', year: 2026 },
-      { id: 't-karung-2026', name: 'Lomba Balap Karung Anak', status: 'berjalan', year: 2026 },
-      { id: 't-tumpeng-2026', name: 'Lomba Menghias Tumpeng', status: 'berjalan', year: 2026 },
-      { id: 't-tarik-2026', name: 'Lomba Tarik Tambang', status: 'berjalan', year: 2026 },
-      { id: 't-karaoke-2025', name: 'Lomba Karaoke Iremda', status: 'selesai', year: 2025 },
-      { id: 't-mewarnai-2025', name: 'Lomba Mewarnai Balita', status: 'selesai', year: 2025 },
-      { id: 't-gaple-2024', name: 'Lomba Gaple Bapak-Bapak', status: 'selesai', year: 2024 }
+      { id: 't-futsal-2026', name: 'Lomba Futsal RT 02', status: 'berjalan', year: 2026, created_at: new Date().toISOString() }, // Today
+      { id: 't-catur-2026', name: 'Lomba Catur Warga', status: 'berjalan', year: 2026, created_at: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() }, // This week
+      { id: 't-karung-2026', name: 'Lomba Balap Karung Anak', status: 'berjalan', year: 2026, created_at: new Date(Date.now() - 20 * 24 * 3600 * 1000).toISOString() }, // This month
+      { id: 't-tumpeng-2026', name: 'Lomba Menghias Tumpeng', status: 'berjalan', year: 2026, created_at: new Date(Date.now() - 40 * 24 * 3600 * 1000).toISOString() }, // This year
+      { id: 't-tarik-2026', name: 'Lomba Tarik Tambang', status: 'berjalan', year: 2026, created_at: new Date(Date.now() - 50 * 24 * 3600 * 1000).toISOString() }, // This year
+      { id: 't-karaoke-2025', name: 'Lomba Karaoke Iremda', status: 'selesai', year: 2025, created_at: new Date('2025-08-15T10:00:00Z').toISOString() }, // Last year
+      { id: 't-mewarnai-2025', name: 'Lomba Mewarnai Balita', status: 'selesai', year: 2025, created_at: new Date('2025-08-16T10:00:00Z').toISOString() }, // Last year
+      { id: 't-gaple-2024', name: 'Lomba Gaple Bapak-Bapak', status: 'selesai', year: 2024, created_at: new Date('2024-08-15T10:00:00Z').toISOString() } // 2 years ago
     ]
     localStorage.setItem('katar_tournaments', JSON.stringify(mockTourneys))
     parsedTourneys = mockTourneys
@@ -109,21 +112,45 @@ const seedDemoParticipantData = () => {
   if (!currentParts || currentParts === '[]') {
     const mockParts = []
     
-    // Add individual participants to t-catur-2026 (18 participants)
+    // Add individual participants to t-catur-2026 (18 participants) - this week
     for (let i = 1; i <= 18; i++) {
-      mockParts.push({ id: `p-catur-${i}`, name: `Warga Catur ${i}`, tournament_id: 't-catur-2026', origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}` })
+      mockParts.push({ 
+        id: `p-catur-${i}`, 
+        name: `Warga Catur ${i}`, 
+        tournament_id: 't-catur-2026', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}`,
+        created_at: new Date(Date.now() - (i % 6) * 24 * 3600 * 1000).toISOString() // last 6 days
+      })
     }
-    // Add individual participants to t-karung-2026 (28 participants)
+    // Add individual participants to t-karung-2026 (28 participants) - this month
     for (let i = 1; i <= 28; i++) {
-      mockParts.push({ id: `p-karung-${i}`, name: `Anak Karung ${i}`, tournament_id: 't-karung-2026', origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}` })
+      mockParts.push({ 
+        id: `p-karung-${i}`, 
+        name: `Anak Karung ${i}`, 
+        tournament_id: 't-karung-2026', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}`,
+        created_at: new Date(Date.now() - (i % 25) * 24 * 3600 * 1000).toISOString() // last 25 days
+      })
     }
-    // Add individual participants to t-karaoke-2025 (15 participants)
+    // Add individual participants to t-karaoke-2025 (15 participants) - last year
     for (let i = 1; i <= 15; i++) {
-      mockParts.push({ id: `p-karaoke-${i}`, name: `Penyanyi ${i}`, tournament_id: 't-karaoke-2025', origin_block: `Blok ${String.fromCharCode(65 + (i % 2))}` })
+      mockParts.push({ 
+        id: `p-karaoke-${i}`, 
+        name: `Penyanyi ${i}`, 
+        tournament_id: 't-karaoke-2025', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 2))}`,
+        created_at: new Date('2025-08-18T10:00:00Z').toISOString()
+      })
     }
-    // Add individual participants to t-mewarnai-2025 (22 participants)
+    // Add individual participants to t-mewarnai-2025 (22 participants) - last year
     for (let i = 1; i <= 22; i++) {
-      mockParts.push({ id: `p-mewarnai-${i}`, name: `Balita ${i}`, tournament_id: 't-mewarnai-2025', origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}` })
+      mockParts.push({ 
+        id: `p-mewarnai-${i}`, 
+        name: `Balita ${i}`, 
+        tournament_id: 't-mewarnai-2025', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}`,
+        created_at: new Date('2025-08-19T10:00:00Z').toISOString()
+      })
     }
 
     localStorage.setItem('katar_participants', JSON.stringify(mockParts))
@@ -134,21 +161,45 @@ const seedDemoParticipantData = () => {
   if (!currentTeams || currentTeams === '[]') {
     const mockTeams = []
 
-    // Add teams to t-futsal-2026 (12 teams)
+    // Add teams to t-futsal-2026 (12 teams) - today/yesterday
     for (let i = 1; i <= 12; i++) {
-      mockTeams.push({ id: `team-futsal-${i}`, name: `FC Blok ${String.fromCharCode(65 + (i % 4))} - Team ${i}`, tournament_id: 't-futsal-2026', origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}` })
+      mockTeams.push({ 
+        id: `team-futsal-${i}`, 
+        name: `FC Blok ${String.fromCharCode(65 + (i % 4))} - Team ${i}`, 
+        tournament_id: 't-futsal-2026', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 4))}`,
+        created_at: new Date(Date.now() - (i % 2) * 24 * 3600 * 1000).toISOString()
+      })
     }
-    // Add teams to t-tumpeng-2026 (10 teams)
+    // Add teams to t-tumpeng-2026 (10 teams) - this month
     for (let i = 1; i <= 10; i++) {
-      mockTeams.push({ id: `team-tumpeng-${i}`, name: `Ibu Cantik ${i}`, tournament_id: 't-tumpeng-2026', origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}` })
+      mockTeams.push({ 
+        id: `team-tumpeng-${i}`, 
+        name: `Ibu Cantik ${i}`, 
+        tournament_id: 't-tumpeng-2026', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}`,
+        created_at: new Date(Date.now() - (i % 15) * 24 * 3600 * 1000).toISOString()
+      })
     }
-    // Add teams to t-tarik-2026 (8 teams)
+    // Add teams to t-tarik-2026 (8 teams) - this year
     for (let i = 1; i <= 8; i++) {
-      mockTeams.push({ id: `team-tarik-${i}`, name: `Kuat Perkasa ${i}`, tournament_id: 't-tarik-2026', origin_block: `Blok ${String.fromCharCode(65 + (i % 2))}` })
+      mockTeams.push({ 
+        id: `team-tarik-${i}`, 
+        name: `Kuat Perkasa ${i}`, 
+        tournament_id: 't-tarik-2026', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 2))}`,
+        created_at: new Date(Date.now() - (i % 30) * 24 * 3600 * 1000).toISOString()
+      })
     }
-    // Add teams to t-gaple-2024 (16 teams)
+    // Add teams to t-gaple-2024 (16 teams) - 2 years ago
     for (let i = 1; i <= 16; i++) {
-      mockTeams.push({ id: `team-gaple-${i}`, name: `Pasangan Gaple ${i}`, tournament_id: 't-gaple-2024', origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}` })
+      mockTeams.push({ 
+        id: `team-gaple-${i}`, 
+        name: `Pasangan Gaple ${i}`, 
+        tournament_id: 't-gaple-2024', 
+        origin_block: `Blok ${String.fromCharCode(65 + (i % 3))}`,
+        created_at: new Date('2024-08-16T10:00:00Z').toISOString()
+      })
     }
 
     localStorage.setItem('katar_teams', JSON.stringify(mockTeams))
@@ -162,20 +213,48 @@ const seedDemoParticipantData = () => {
     // Seed 50 registrations with varying ages
     for (let i = 1; i <= 50; i++) {
       const age = 5 + (i * 7) % 60
-      mockRegs.push({ id: `reg-${i}`, age, tournament_id: i % 2 === 0 ? 't-catur-2026' : 't-karung-2026' })
+      mockRegs.push({ 
+        id: `reg-${i}`, 
+        age, 
+        tournament_id: i % 2 === 0 ? 't-catur-2026' : 't-karung-2026',
+        created_at: new Date(Date.now() - (i % 35) * 24 * 3600 * 1000).toISOString()
+      })
     }
     localStorage.setItem('katar_registrations', JSON.stringify(mockRegs))
+  }
+
+  // 5. Seed Popup Banners
+  const currentBanners = localStorage.getItem('katar_popup_banners')
+  if (!currentBanners || currentBanners === '[]') {
+    const mockBanners = [
+      {
+        id: 'mock-banner-1',
+        image_url: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200',
+        ratio: 'horizontal',
+        link_url: '/league',
+        is_active: true,
+        created_at: new Date().toISOString()
+      }
+    ]
+    localStorage.setItem('katar_popup_banners', JSON.stringify(mockBanners))
   }
 }
 
 const calculateParticipantAnalytics = (participants, teams, registrations, tournaments) => {
   const tournamentMap = {}
-  const participantsPerYear = {}
-  
+  const yearlyStatsMap = {}
+
   // Initialize tournamentMap with all tournaments
   if (Array.isArray(tournaments)) {
     tournaments.forEach(t => {
       tournamentMap[t.id] = { label: t.name, count: 0 }
+      
+      // Initialize yearlyStatsMap
+      const year = t.year || t.years?.year_number || 2026
+      if (!yearlyStatsMap[year]) {
+        yearlyStatsMap[year] = { tournaments: 0, participants: 0 }
+      }
+      yearlyStatsMap[year].tournaments++
     })
   }
 
@@ -184,7 +263,11 @@ const calculateParticipantAnalytics = (participants, teams, registrations, tourn
     participants.forEach(p => {
       const tourney = tournaments.find(t => t.id === p.tournament_id)
       const year = tourney ? (tourney.year || tourney.years?.year_number || 2026) : 2026
-      participantsPerYear[year] = (participantsPerYear[year] || 0) + 1
+      
+      if (!yearlyStatsMap[year]) {
+        yearlyStatsMap[year] = { tournaments: 0, participants: 0 }
+      }
+      yearlyStatsMap[year].participants++
 
       if (tournamentMap[p.tournament_id]) {
         tournamentMap[p.tournament_id].count += 1
@@ -197,7 +280,11 @@ const calculateParticipantAnalytics = (participants, teams, registrations, tourn
     teams.forEach(t => {
       const tourney = tournaments.find(tourneyItem => tourneyItem.id === t.tournament_id)
       const year = tourney ? (tourney.year || tourney.years?.year_number || 2026) : 2026
-      participantsPerYear[year] = (participantsPerYear[year] || 0) + 1
+      
+      if (!yearlyStatsMap[year]) {
+        yearlyStatsMap[year] = { tournaments: 0, participants: 0 }
+      }
+      yearlyStatsMap[year].participants++
 
       if (tournamentMap[t.tournament_id]) {
         tournamentMap[t.tournament_id].count += 1
@@ -210,15 +297,17 @@ const calculateParticipantAnalytics = (participants, teams, registrations, tourn
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
 
-  // Format yearly distribution
-  const yearlyDistribution = Object.keys(participantsPerYear).map(year => ({
+  // Convert to sorted array of years (ascending, e.g. 2024, 2025, 2026)
+  const yearlyStats = Object.keys(yearlyStatsMap).map(year => ({
+    year: Number(year),
     label: `Tahun ${year}`,
-    count: participantsPerYear[year]
-  })).sort((a, b) => b.label.localeCompare(a.label)) // Sort descending by year name
+    tournaments: yearlyStatsMap[year].tournaments,
+    participants: yearlyStatsMap[year].participants
+  })).sort((a, b) => a.year - b.year)
 
   return {
     popularTournaments,
-    yearlyDistribution
+    yearlyStats
   }
 }
 
@@ -412,7 +501,6 @@ export default function AdminPage() {
       const { data, error } = await supabase
         .from('tournaments')
         .select('*, years(year_number)')
-        .neq('status', 'selesai')
       if (error) throw error
 
       const mapped = (data || []).map(t => ({
@@ -439,7 +527,7 @@ export default function AdminPage() {
         // 1. Tournaments
         const { data: tourneys, error: tErr } = await supabase
           .from('tournaments')
-          .select('id, name, type, category, status, years(year_number)')
+          .select('id, name, type, category, status, created_at, years(year_number)')
         if (tErr) throw tErr
 
         const mappedTourneys = (tourneys || []).map(t => ({
@@ -489,13 +577,13 @@ export default function AdminPage() {
         let allRegistrations = []
 
         try {
-          const { data: pData } = await supabase.from('participants').select('id, tournament_id, origin_block')
+          const { data: pData } = await supabase.from('participants').select('id, tournament_id, origin_block, created_at')
           allParticipants = pData || []
 
-          const { data: tData } = await supabase.from('teams').select('id, tournament_id, origin_block')
+          const { data: tData } = await supabase.from('teams').select('id, tournament_id, origin_block, created_at')
           allTeams = tData || []
 
-          const { data: rData } = await supabase.from('registrations').select('id, age, tournament_id')
+          const { data: rData } = await supabase.from('registrations').select('id, age, tournament_id, created_at')
           allRegistrations = rData || []
         } catch (err) {
           console.warn('Failed to fetch participant analytics rows:', err)
@@ -617,7 +705,7 @@ export default function AdminPage() {
 
   // ── Authenticated dashboard ──
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl xl:max-w-7xl mx-auto px-4 py-8">
       {/* Dashboard header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
@@ -649,7 +737,7 @@ export default function AdminPage() {
       {/* Navigation tabs */}
       <div 
         ref={tabsContainerRef}
-        className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row lg:flex-nowrap lg:justify-start gap-2 lg:gap-1.5 xl:gap-2 p-1.5 bg-abu-200/50 rounded-2xl mb-8 overflow-x-auto scrollbar-none"
+        className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row lg:flex-nowrap lg:justify-start gap-2 p-1.5 bg-abu-150 border border-abu-200/45 rounded-2xl mb-8 overflow-x-auto scrollbar-none shadow-sm"
       >
         {[
           { id: 'overview', label: 'Ringkasan', icon: 'solar:chart-square-bold-duotone' },
@@ -663,14 +751,14 @@ export default function AdminPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             data-active={activeTab === tab.id}
-            className={`w-full lg:w-auto min-h-[42px] px-3.5 py-2.5 lg:px-2.5 xl:px-3.5 lg:py-2 rounded-xl flex items-center justify-center lg:justify-start gap-2 lg:gap-1.5 xl:gap-2 text-xs md:text-sm lg:text-[13px] xl:text-sm font-semibold transition-all duration-300 cursor-pointer focus-ring whitespace-nowrap lg:flex-none
+            className={`w-full lg:w-auto min-h-[42px] px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs md:text-sm font-semibold transition-all duration-300 cursor-pointer focus-ring whitespace-nowrap lg:flex-none border
               ${activeTab === tab.id
-                ? 'bg-white text-merah-700 shadow-sm'
-                : 'text-abu-600 hover:text-abu-900 hover:bg-white/55'
+                ? 'bg-white text-merah-700 shadow-sm border-abu-200/60 scale-[1.01]'
+                : 'text-abu-600 hover:text-abu-900 hover:bg-white/50 border-transparent'
               }`}
           >
-            <Icon icon={tab.icon} className="w-4.5 h-4.5 flex-shrink-0" />
-            <span className="truncate lg:overflow-visible lg:whitespace-nowrap">{tab.label}</span>
+            <Icon icon={tab.icon} className="w-5 h-5 flex-shrink-0" />
+            <span className="truncate">{tab.label}</span>
           </button>
         ))}
       </div>
@@ -712,65 +800,77 @@ export default function AdminPage() {
 
           return (
             <div className="space-y-6">
-              {/* Overview Stats Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-abu-500 mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Lomba Aktif</span>
-                    <Icon icon="solar:cup-bold" className="w-5 h-5 text-merah-500" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-heading font-black text-abu-900 leading-tight">
-                      {stats.activeTournamentsCount}
+              {/* Top Row: Stats (Left) & Visitor Analytics (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Left Column: Stacked Stats Cards (Grid on mobile/tablet, single vertical column on desktop) */}
+                <div className="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-4">
+                  {/* Card 1: Lomba Aktif */}
+                  <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-abu-300 hover:-translate-y-0.5">
+                    <div className="flex items-center justify-between text-abu-500 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Lomba Aktif</span>
+                      <div className="p-1.5 rounded-lg bg-merah-50">
+                        <Icon icon="solar:cup-bold" className="w-5 h-5 text-merah-500" />
+                      </div>
                     </div>
-                    <p className="text-[11px] text-abu-400 mt-1">Belum/sedang berjalan</p>
+                    <div>
+                      <div className="text-2xl md:text-3xl font-heading font-black text-abu-900 leading-tight">
+                        {stats.activeTournamentsCount}
+                      </div>
+                      <p className="text-[11px] text-abu-400 mt-1">Belum/sedang berjalan</p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Peserta Lomba */}
+                  <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-abu-300 hover:-translate-y-0.5">
+                    <div className="flex items-center justify-between text-abu-500 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Peserta Lomba</span>
+                      <div className="p-1.5 rounded-lg bg-blue-50">
+                        <Icon icon="solar:users-group-two-rounded-bold" className="w-5 h-5 text-blue-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-2xl md:text-3xl font-heading font-black text-abu-900 leading-tight">
+                        {stats.totalParticipantsCount}
+                      </div>
+                      <p className="text-[11px] text-abu-400 mt-1">Total peserta aktif</p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Berita */}
+                  <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-abu-300 hover:-translate-y-0.5">
+                    <div className="flex items-center justify-between text-abu-500 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Berita</span>
+                      <div className="p-1.5 rounded-lg bg-emerald-50">
+                        <Icon icon="solar:document-bold" className="w-5 h-5 text-emerald-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-2xl md:text-3xl font-heading font-black text-abu-900 leading-tight">
+                        {stats.totalNewsCount}
+                      </div>
+                      <p className="text-[11px] text-abu-400 mt-1">Artikel di home page</p>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Galeri Foto */}
+                  <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between shadow-sm transition-all duration-300 hover:shadow-md hover:border-abu-300 hover:-translate-y-0.5">
+                    <div className="flex items-center justify-between text-abu-500 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Galeri Foto</span>
+                      <div className="p-1.5 rounded-lg bg-amber-50">
+                        <Icon icon="solar:gallery-bold" className="w-5 h-5 text-amber-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-2xl md:text-3xl font-heading font-black text-abu-900 leading-tight">
+                        {stats.totalMediaCount}
+                      </div>
+                      <p className="text-[11px] text-abu-400 mt-1">Foto kegiatan warga</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-abu-500 mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Peserta Lomba</span>
-                    <Icon icon="solar:users-group-two-rounded-bold" className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-heading font-black text-abu-900 leading-tight">
-                      {stats.totalParticipantsCount}
-                    </div>
-                    <p className="text-[11px] text-abu-400 mt-1">Total peserta aktif</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-abu-500 mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Berita</span>
-                    <Icon icon="solar:document-bold" className="w-5 h-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-heading font-black text-abu-900 leading-tight">
-                      {stats.totalNewsCount}
-                    </div>
-                    <p className="text-[11px] text-abu-400 mt-1">Artikel di home page</p>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-abu-200 p-5 rounded-2xl flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-abu-500 mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider">Galeri Foto</span>
-                    <Icon icon="solar:gallery-bold" className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <div className="text-3xl font-heading font-black text-abu-900 leading-tight">
-                      {stats.totalMediaCount}
-                    </div>
-                    <p className="text-[11px] text-abu-400 mt-1">Foto kegiatan warga</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Analytics Section Grid */}
-              <div className="grid grid-cols-1 gap-6">
-                {/* Visitor Stats Section */}
-                <div className="bg-white border border-abu-200 rounded-2xl p-6 space-y-6">
+                {/* Right Column: Analisis Pengunjung Website */}
+                <div className="lg:col-span-3 bg-white border border-abu-200 rounded-2xl p-6 shadow-sm transition-all duration-300 hover:shadow-md space-y-6 flex flex-col justify-between">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-abu-100 pb-3">
                     <div>
                       <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2">
@@ -786,31 +886,31 @@ export default function AdminPage() {
                   </div>
 
                   {/* Visitor Stats Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
+                  <div className="grid grid-cols-3 gap-3 md:gap-4">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-abu-50/80">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Minggu</span>
-                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
+                      <div className="mt-1.5">
+                        <div className="text-xl md:text-3xl font-heading font-black text-abu-950 leading-tight">
                           {stats.visitorStats?.weekly || 0}
                         </div>
                         <span className="text-[9px] text-abu-400">Pengunjung Weekly</span>
                       </div>
                     </div>
 
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-abu-50/80">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Bulan</span>
-                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
+                      <div className="mt-1.5">
+                        <div className="text-xl md:text-3xl font-heading font-black text-abu-950 leading-tight">
                           {stats.visitorStats?.monthly || 0}
                         </div>
                         <span className="text-[9px] text-abu-400">Pengunjung Monthly</span>
                       </div>
                     </div>
 
-                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-row items-center justify-between sm:flex-col sm:items-stretch sm:justify-between">
+                    <div className="bg-abu-50/50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between transition-all duration-300 hover:bg-abu-50/80">
                       <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">Per Tahun</span>
-                      <div className="mt-0 sm:mt-1.5 text-right sm:text-left">
-                        <div className="text-2xl md:text-3xl font-heading font-black text-abu-950 leading-none sm:leading-tight">
+                      <div className="mt-1.5">
+                        <div className="text-xl md:text-3xl font-heading font-black text-abu-950 leading-tight">
                           {stats.visitorStats?.yearly || 0}
                         </div>
                         <span className="text-[9px] text-abu-400">Pengunjung Yearly</span>
@@ -1044,69 +1144,306 @@ export default function AdminPage() {
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* Participant Stats Section */}
-                <div className="bg-white border border-abu-200 rounded-2xl p-6 flex flex-col justify-between space-y-6">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-abu-100 pb-3">
-                      <div>
-                        <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2">
-                          <Icon icon="solar:users-group-two-rounded-bold-duotone" className="w-6 h-6 text-merah-500" />
-                          Analisis Peserta Lomba
-                        </h3>
-                        <p className="text-xs text-abu-400 mt-0.5">Statistik keseluruhan partisipasi warga per tahun dan lomba terpopuler</p>
-                      </div>
-                    </div>
-
-                    {/* Partisipasi per Tahun */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-abu-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Icon icon="solar:calendar-bold-duotone" className="w-4 h-4 text-abu-500" />
-                        Total Keseluruhan Peserta per Tahun
-                      </h4>
-                      {stats.participantAnalytics?.yearlyDistribution && stats.participantAnalytics.yearlyDistribution.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-4">
-                          {stats.participantAnalytics.yearlyDistribution.map((item, idx) => (
-                            <div key={idx} className="bg-abu-50 border border-abu-150 p-4 rounded-xl flex flex-col justify-between animate-fade-in">
-                              <span className="text-[10px] font-bold text-abu-500 uppercase tracking-wider">{item.label}</span>
-                              <div className="mt-1">
-                                <div className="text-2xl font-heading font-black text-abu-950">
-                                  {item.count}
-                                </div>
-                                <span className="text-[9px] text-abu-400">Total Peserta/Tim</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-xs text-abu-400 italic">Belum ada data partisipasi tahunan.</div>
-                      )}
-                    </div>
-
-                    {/* 5 Lomba Terpopuler */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-abu-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <Icon icon="solar:fire-bold-duotone" className="w-4 h-4 text-abu-500" />
-                        5 Lomba Terpopuler (Antusias/Pendaftar Terbanyak)
-                      </h4>
-                      {stats.participantAnalytics?.popularTournaments && stats.participantAnalytics.popularTournaments.length > 0 ? (
-                        <div className="space-y-2.5">
-                          {stats.participantAnalytics.popularTournaments.map((t, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-abu-50/70 border border-abu-150 rounded-xl text-xs hover:bg-abu-50 transition-colors">
-                              <span className="font-semibold text-abu-850 truncate max-w-[220px]">
-                                {t.label}
-                              </span>
-                              <span className="font-bold text-merah-600 bg-merah-50 px-2 py-0.5 rounded-md">
-                                {t.count} Pendaftar
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 text-xs text-abu-400 italic">Belum ada data lomba terpopuler.</div>
-                      )}
+              {/* Bottom Row: Popular Tournaments (Left) & Yearly Activity Diagram (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 5 Lomba Terpopuler */}
+                <div className="bg-white border border-abu-200 rounded-2xl p-6 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between space-y-4">
+                  <div className="flex items-center justify-between border-b border-abu-100 pb-3">
+                    <div>
+                      <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2">
+                        <Icon icon="solar:fire-bold-duotone" className="w-6 h-6 text-merah-500" />
+                        5 Lomba Terpopuler
+                      </h3>
+                      <p className="text-xs text-abu-400 mt-0.5">Antusias/Pendaftar Terbanyak</p>
                     </div>
                   </div>
+
+                  {stats.participantAnalytics?.popularTournaments && stats.participantAnalytics.popularTournaments.length > 0 ? (
+                    (() => {
+                      const popularT = stats.participantAnalytics.popularTournaments
+                      const maxCount = Math.max(...popularT.map(t => t.count), 1)
+
+                      const svgW = 500
+                      const svgH = 220
+                      const padL = 135 // Room for tournament name labels
+                      const padR = 40  // Room for numbers on the right
+                      const padT = 15
+                      const padB = 20
+
+                      const cW = svgW - padL - padR
+                      const cH = svgH - padT - padB
+                      const rowH = cH / Math.max(popularT.length, 1)
+                      const barH = 18
+
+                      const rankColors = [
+                        '#F59E0B', // Gold
+                        '#64748B', // Silver
+                        '#B45309', // Bronze
+                        '#94A3B8', // 4th
+                        '#94A3B8'  // 5th
+                      ]
+
+                      return (
+                        <div className="w-full bg-abu-50/50 border border-abu-150 p-4 rounded-xl">
+                          <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-auto">
+                            <defs>
+                              <linearGradient id="popular-bar-gradient" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stopColor="#EF4444" stopOpacity="0.85" />
+                                <stop offset="100%" stopColor="#DC2626" />
+                              </linearGradient>
+                            </defs>
+
+                            {/* Y-Axis Base Line */}
+                            <line 
+                              x1={padL} 
+                              y1={padT} 
+                              x2={padL} 
+                              y2={padT + cH} 
+                              stroke="#D1D5DB" 
+                              strokeWidth="1.5" 
+                            />
+
+                            {/* Bars & Labels */}
+                            {popularT.map((t, idx) => {
+                              const barW = (t.count / maxCount) * cW
+                              const cY = padT + (idx + 0.5) * rowH
+                              const barY = cY - barH / 2
+
+                              // Truncate name if it's too long
+                              const labelText = t.label.length > 18 ? t.label.substring(0, 16) + '...' : t.label
+
+                              return (
+                                <g key={idx} className="group cursor-pointer">
+                                  {/* Rank number badge next to name */}
+                                  <circle
+                                    cx={15}
+                                    cy={cY}
+                                    r="9"
+                                    fill={rankColors[idx] || '#94A3B8'}
+                                    opacity="0.9"
+                                  />
+                                  <text
+                                    x={15}
+                                    y={cY + 3}
+                                    textAnchor="middle"
+                                    className="text-[9px] font-black fill-white"
+                                  >
+                                    {idx + 1}
+                                  </text>
+
+                                  {/* Tournament Name Label */}
+                                  <text
+                                    x={30}
+                                    y={cY + 3}
+                                    textAnchor="start"
+                                    className="text-[10px] font-bold fill-abu-700 group-hover:fill-abu-950 group-hover:font-black transition-colors"
+                                  >
+                                    {labelText}
+                                    <title>{t.label}</title>
+                                  </text>
+
+                                  {/* Bar */}
+                                  <rect
+                                    x={padL}
+                                    y={barY}
+                                    width={Math.max(barW, 3)}
+                                    height={barH}
+                                    rx="3"
+                                    fill="url(#popular-bar-gradient)"
+                                    className="transition-all duration-300 hover:opacity-90"
+                                  />
+
+                                  {/* Count Label inside/next to bar */}
+                                  <text
+                                    x={padL + barW + 8}
+                                    y={cY + 3.5}
+                                    textAnchor="start"
+                                    className="text-[10px] font-black fill-merah-700"
+                                  >
+                                    {t.count}
+                                  </text>
+                                </g>
+                              )
+                            })}
+                          </svg>
+                        </div>
+                      )
+                    })()
+                  ) : (
+                    <div className="text-center py-8 text-xs text-abu-400 italic">Belum ada data lomba terpopuler.</div>
+                  )}
+                </div>
+
+                {/* Diagram Aktivitas Lomba & Pendaftar (Tahunan) */}
+                <div className="bg-white border border-abu-200 rounded-2xl p-6 shadow-sm transition-all duration-300 hover:shadow-md flex flex-col justify-between space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-abu-100 pb-3">
+                    <div>
+                      <h3 className="font-heading text-lg font-bold text-abu-900 flex items-center gap-2">
+                        <Icon icon="solar:chart-square-bold-duotone" className="w-6 h-6 text-merah-500" />
+                        Diagram Aktivitas Lomba &amp; Pendaftar
+                      </h3>
+                      <p className="text-xs text-abu-400 mt-0.5">Statistik pendaftaran &amp; lomba baru per tahun</p>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center gap-4 text-[10px] font-bold text-abu-600 self-start sm:self-center">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded bg-blue-500" />
+                        <span>Lomba Baru</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded bg-merah-500" />
+                        <span>Pendaftar</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const yearlyData = stats.participantAnalytics?.yearlyStats || []
+
+                    if (yearlyData.length === 0) {
+                      return <div className="text-center py-8 text-sm text-abu-400 italic">Belum ada data aktivitas tahunan.</div>
+                    }
+
+                    // Find maximum value to scale the Y-axis
+                    const maxVal = Math.max(
+                      ...yearlyData.map(y => Math.max(y.tournaments, y.participants)),
+                      1
+                    )
+
+                    const svgW = 500
+                    const svgH = 220
+                    const padL = 40
+                    const padR = 20
+                    const padT = 30
+                    const padB = 35
+
+                    const cW = svgW - padL - padR
+                    const cH = svgH - padT - padB
+                    const gW = cW / yearlyData.length
+
+                    return (
+                      <div className="w-full bg-abu-50/50 border border-abu-150 p-4 rounded-xl">
+                        <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-auto">
+                          <defs>
+                            <linearGradient id="blue-bar-gradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#3B82F6" />
+                              <stop offset="100%" stopColor="#1D4ED8" />
+                            </linearGradient>
+                            <linearGradient id="red-bar-gradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#EF4444" />
+                              <stop offset="100%" stopColor="#B91C1C" />
+                            </linearGradient>
+                          </defs>
+
+                          {/* Y-Axis Grid Lines */}
+                          {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                            const y = padT + cH * ratio
+                            const labelVal = Math.round(maxVal * (1 - ratio))
+                            return (
+                              <g key={idx}>
+                                <line 
+                                  x1={padL} 
+                                  y1={y} 
+                                  x2={svgW - padR} 
+                                  y2={y} 
+                                  stroke="#E5E7EB" 
+                                  strokeDasharray="4 4" 
+                                />
+                                <text 
+                                  x={padL - 8} 
+                                  y={y + 4} 
+                                  textAnchor="end" 
+                                  className="text-[9px] font-bold fill-abu-400"
+                                >
+                                  {labelVal}
+                                </text>
+                              </g>
+                            )
+                          })}
+
+                          {/* Bars & Labels */}
+                          {yearlyData.map((data, idx) => {
+                            // Group center X
+                            const cX = padL + (idx + 0.5) * gW
+                            const barW = 20
+                            const gap = 6
+
+                            // Calculate positions and heights
+                            const tH = (data.tournaments / maxVal) * cH
+                            const tY = padT + cH - tH
+                            const tX = cX - barW - gap / 2
+
+                            const pH = (data.participants / maxVal) * cH
+                            const pY = padT + cH - pH
+                            const pX = cX + gap / 2
+
+                            return (
+                              <g key={data.year} className="group">
+                                {/* Tournament Bar */}
+                                {data.tournaments > 0 && (
+                                  <g>
+                                    <rect
+                                      x={tX}
+                                      y={tY}
+                                      width={barW}
+                                      height={tH}
+                                      rx="3"
+                                      fill="url(#blue-bar-gradient)"
+                                      className="transition-all duration-300 hover:opacity-85 cursor-pointer"
+                                    />
+                                    <text
+                                      x={tX + barW / 2}
+                                      y={tY - 5}
+                                      textAnchor="middle"
+                                      className="text-[8px] font-black fill-blue-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      {data.tournaments}
+                                    </text>
+                                  </g>
+                                )}
+
+                                {/* Participant Bar */}
+                                {data.participants > 0 && (
+                                  <g>
+                                    <rect
+                                      x={pX}
+                                      y={pY}
+                                      width={barW}
+                                      height={pH}
+                                      rx="3"
+                                      fill="url(#red-bar-gradient)"
+                                      className="transition-all duration-300 hover:opacity-85 cursor-pointer"
+                                    />
+                                    <text
+                                      x={pX + barW / 2}
+                                      y={pY - 5}
+                                      textAnchor="middle"
+                                      className="text-[8px] font-black fill-merah-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      {data.participants}
+                                    </text>
+                                  </g>
+                                )}
+
+                                {/* X-Axis Label */}
+                                <text
+                                  x={cX}
+                                  y={svgH - 12}
+                                  textAnchor="middle"
+                                  className="text-[9px] font-bold fill-abu-500 group-hover:fill-abu-850 group-hover:font-black transition-colors"
+                                >
+                                  {data.label}
+                                </text>
+                              </g>
+                            )
+                          })}
+                        </svg>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -1114,10 +1451,16 @@ export default function AdminPage() {
         })()}
 
         {activeTab === 'tournaments' && (
-          <div className="grid grid-cols-1 gap-6">
-            <FormBuatLomba onTournamentAdded={handleTournamentAdded} />
+          <div className="space-y-6">
+            {/* Row 1: Buat Lomba Baru & Batasan Usia (Side-by-Side) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <FormEditKategori />
+              <FormBuatLomba onTournamentAdded={handleTournamentAdded} />
+            </div>
+
+            {/* Row 2: Kunci Pemenang & Daftar Lomba (Stacked below) */}
             <FormKunciPemenang
-              tournaments={tournaments}
+              tournaments={tournaments.filter(t => t.status !== 'selesai')}
               onTournamentUpdated={handleTournamentUpdated}
             />
             <FormDaftarLomba
@@ -1128,11 +1471,11 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'participants' && (
-          <FormInputPeserta tournaments={tournaments} />
+          <FormInputPeserta tournaments={tournaments.filter(t => t.status !== 'selesai')} />
         )}
 
         {activeTab === 'news-media' && (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <FormKelolaBerita onNewsAdded={handleMediaAdded} />
             <FormKelolaMedia onMediaAdded={handleMediaAdded} />
           </div>
@@ -1143,7 +1486,10 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'announcements' && (
-          <FormKelolaTicker />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <FormKelolaTicker />
+            <FormKelolaBanner />
+          </div>
         )}
       </div>
     </div>

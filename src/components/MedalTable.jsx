@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { animate } from 'animejs'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
+import { getCustomCategories } from './admin/adminUtils'
 
 /**
  * MedalTable — Historical medal standings with year selector.
@@ -15,7 +16,20 @@ export default function MedalTable() {
   const [selectedCategory, setSelectedCategory] = useState('semua')
   const [medals, setMedals] = useState([])
   const [loading, setLoading] = useState(true)
+  const [customCategories, setCustomCategories] = useState(getCustomCategories())
   const tableRef = useRef(null)
+
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCustomCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
+
+  const getCatLabel = (id, fallback) => {
+    return customCategories.find(c => c.id === id)?.name || fallback
+  }
 
   // ─── Fetch available years on mount ───────────────────────────
   useEffect(() => {
@@ -66,7 +80,7 @@ export default function MedalTable() {
           // Fetch winners joined with tournaments for the selected year.
           let query = supabase
             .from('winners')
-            .select('rank, origin_block, tournaments!inner(type, category, year_id, years!inner(year_number))')
+            .select('rank, winner_name_or_team, origin_block, tournaments!inner(type, category, year_id, years!inner(year_number))')
             .eq('tournaments.years.year_number', selectedYear)
             .in('rank', [1, 2, 3])
 
@@ -102,17 +116,17 @@ export default function MedalTable() {
               return cat === selectedCategory
             })
 
-            // Aggregate medals by origin_block
+            // Aggregate medals by name (winner_name_or_team)
             const aggregated = {}
 
             filteredData.forEach((winner) => {
-              const block = winner.origin_block || 'Tidak Diketahui'
-              if (!aggregated[block]) {
-                aggregated[block] = { block, gold: 0, silver: 0, bronze: 0 }
+              const name = winner.winner_name_or_team || 'Tidak Diketahui'
+              if (!aggregated[name]) {
+                aggregated[name] = { name, gold: 0, silver: 0, bronze: 0 }
               }
-              if (winner.rank === 1) aggregated[block].gold += 1
-              if (winner.rank === 2) aggregated[block].silver += 1
-              if (winner.rank === 3) aggregated[block].bronze += 1
+              if (winner.rank === 1) aggregated[name].gold += 1
+              if (winner.rank === 2) aggregated[name].silver += 1
+              if (winner.rank === 3) aggregated[name].bronze += 1
             })
 
             // Sort: gold desc → silver desc → bronze desc
@@ -168,13 +182,13 @@ export default function MedalTable() {
             aria-label="Pilih kategori"
           >
             <option value="semua">Semua Kategori</option>
-            <option value="anak_4_6">Anak-Anak 4-6</option>
-            <option value="anak_7_12">Anak-Anak 7-12</option>
-            <option value="remaja_pria">Remaja Pria</option>
-            <option value="remaja_putri">Remaja Putri</option>
-            <option value="ibu_ibu">Ibu-Ibu</option>
-            <option value="bapak_bapak">Bapak-Bapak</option>
-            <option value="pasangan">Pasangan</option>
+            <option value="anak_4_6">{getCatLabel('anak_4_6', 'Anak-Anak 4-6')}</option>
+            <option value="anak_7_12">{getCatLabel('anak_7_12', 'Anak-Anak 7-12')}</option>
+            <option value="remaja_pria">{getCatLabel('remaja_pria', 'Remaja Pria')}</option>
+            <option value="remaja_putri">{getCatLabel('remaja_putri', 'Remaja Putri')}</option>
+            <option value="ibu_ibu">{getCatLabel('ibu_ibu', 'Ibu-Ibu')}</option>
+            <option value="bapak_bapak">{getCatLabel('bapak_bapak', 'Bapak-Bapak')}</option>
+            <option value="pasangan">{getCatLabel('pasangan', 'Pasangan')}</option>
           </select>
 
           {/* Year dropdown */}
@@ -210,7 +224,7 @@ export default function MedalTable() {
             <thead>
               <tr className="border-b-2 border-abu-200 text-abu-600 text-left">
                 <th className="py-3 pr-2 w-10 text-center">#</th>
-                <th className="py-3 px-2">Gang/Blok</th>
+                <th className="py-3 px-2">Nama Peserta / Tim</th>
                 <th className="py-3 px-2 text-center w-16">
                   <div className="flex justify-center" title="Emas"><Icon icon="solar:cup-first-bold" className="w-5.5 h-5.5 text-amber-500" /></div>
                 </th>
@@ -230,7 +244,7 @@ export default function MedalTable() {
 
                 return (
                   <tr
-                    key={row.block}
+                    key={row.name}
                     className={`border-b border-abu-100 transition-colors ${
                       isJuaraUmum ? 'gold-row hover:bg-amber-100/60' : 'hover:bg-abu-50'
                     }`}
@@ -240,12 +254,12 @@ export default function MedalTable() {
                       {index + 1}
                     </td>
 
-                    {/* Block/Gang name — trophy for Juara Umum */}
+                    {/* Participant/Team name — trophy for Juara Umum */}
                     <td className="py-3 px-2 font-semibold text-abu-900 flex items-center gap-1.5">
                       {isJuaraUmum && (
                         <Icon icon="solar:cup-bold" className="w-5 h-5 text-yellow-500 flex-shrink-0 animate-pulse" />
                       )}
-                      <span>{row.block}</span>
+                      <span>{row.name}</span>
                     </td>
 
                     {/* Medal counts */}

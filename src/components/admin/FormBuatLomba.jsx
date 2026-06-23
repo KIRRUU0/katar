@@ -2,17 +2,19 @@ import { useState, useEffect } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
-import { FALLBACK_YEARS, DEMO_TOURNAMENTS, CATEGORIES } from './adminUtils'
+import { FALLBACK_YEARS, DEMO_TOURNAMENTS, getCustomCategories } from './adminUtils'
 
 export default function FormBuatLomba({ onTournamentAdded }) {
   const [years, setYears] = useState(FALLBACK_YEARS)
   const [dbYears, setDbYears] = useState([])
+  const [categories, setCategories] = useState(getCustomCategories())
   const [form, setForm] = useState({
     year: new Date().getFullYear(),
     name: '',
     category: 'anak_4_6',
     location: '',
     schedule: '',
+    endTime: '',
     pj: '',
   })
   const [loading, setLoading] = useState(false)
@@ -33,6 +35,15 @@ export default function FormBuatLomba({ onTournamentAdded }) {
     })()
   }, [])
 
+  // Listen to custom categories updates
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
+
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
   const handleSubmit = async (e) => {
@@ -42,7 +53,7 @@ export default function FormBuatLomba({ onTournamentAdded }) {
     setToast({ message: '', type: '' })
 
     try {
-      const selectedCat = CATEGORIES.find(c => c.id === form.category) || CATEGORIES[0]
+      const selectedCat = categories.find(c => c.id === form.category) || categories[0]
       const resolvedType = selectedCat.type
 
       if (!isSupabaseConfigured()) {
@@ -60,9 +71,11 @@ export default function FormBuatLomba({ onTournamentAdded }) {
           category: form.category,
           location: form.location,
           schedule: form.schedule ? new Date(form.schedule).toISOString() : null,
+          end_time: form.endTime ? new Date(form.endTime).toISOString() : null,
           pj: form.pj || null,
           status: 'belum',
-          year: form.year
+          year: form.year,
+          created_at: new Date().toISOString()
         }
         localStorage.setItem('katar_tournaments', JSON.stringify([newLocalT, ...localTourneys]))
 
@@ -82,6 +95,7 @@ export default function FormBuatLomba({ onTournamentAdded }) {
           category: form.category,
           location: form.location,
           schedule: form.schedule || null,
+          end_time: form.endTime || null,
           pj: form.pj || null,
           status: 'belum',
         })
@@ -89,7 +103,7 @@ export default function FormBuatLomba({ onTournamentAdded }) {
         setToast({ message: `Lomba "${form.name}" berhasil disimpan!`, type: 'success' })
       }
       // Reset form
-      setForm({ year: new Date().getFullYear(), name: '', category: 'anak_4_6', location: '', schedule: '', pj: '' })
+      setForm({ year: new Date().getFullYear(), name: '', category: 'anak_4_6', location: '', schedule: '', endTime: '', pj: '' })
       onTournamentAdded?.()
     } catch (err) {
       setToast({ message: `Gagal: ${err.message}`, type: 'error' })
@@ -131,7 +145,7 @@ export default function FormBuatLomba({ onTournamentAdded }) {
               onChange={(e) => updateField('category', e.target.value)}
               required
             >
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
@@ -176,15 +190,29 @@ export default function FormBuatLomba({ onTournamentAdded }) {
           </div>
         </div>
 
-        {/* Jadwal */}
-        <div>
-          <label className="block text-sm font-semibold text-abu-700 mb-1">Jadwal</label>
-          <input
-            type="datetime-local"
-            className="form-input focus-ring"
-            value={form.schedule}
-            onChange={(e) => updateField('schedule', e.target.value)}
-          />
+        {/* Jadwal (Mulai & Selesai) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold text-abu-700 mb-1">Waktu Mulai</label>
+            <input
+              type="datetime-local"
+              className="form-input focus-ring"
+              value={form.schedule}
+              onChange={(e) => updateField('schedule', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-abu-700 mb-1">Waktu Selesai</label>
+            <input
+              type="datetime-local"
+              className="form-input focus-ring"
+              value={form.endTime}
+              onChange={(e) => updateField('endTime', e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="text-sm text-abu-500">
+          Catatan: Jika jadwal tidak diisi, maka akan dianggap belum ditentukan.
         </div>
 
         {/* Submit */}

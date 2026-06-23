@@ -197,7 +197,7 @@ export default function FormKelolaTicker() {
     <div className="card p-6 bg-white border border-abu-200 shadow-sm">
       <h3 className="font-heading text-xl font-bold text-abu-900 flex items-center gap-2 mb-4">
         <Icon icon="solar:bullhorn-bold-duotone" className="w-6 h-6 text-merah-600 animate-pulse" />
-        Kelola Ticker Pengumuman (Marquee)
+        Kelola Ticker Pengumuman
       </h3>
 
       <p className="text-sm text-abu-500 mb-6">

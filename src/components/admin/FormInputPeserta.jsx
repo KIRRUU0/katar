@@ -2,12 +2,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
-import { getNormalizedCategory } from './adminUtils'
+import { getNormalizedCategory, getCustomCategories, validateAgeForCategory } from './adminUtils'
 
 export default function FormInputPeserta({ tournaments }) {
   const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })
+  const [customCategories, setCustomCategories] = useState(getCustomCategories())
+
+  // Listen to custom categories updates
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCustomCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
 
   // Individu state
   const [participantName, setParticipantName] = useState('')
@@ -158,13 +168,19 @@ export default function FormInputPeserta({ tournaments }) {
     setToast({ message: '', type: '' })
 
     try {
+      const validation = validateAgeForCategory(participantAge, selected?.category)
+      if (!validation.valid) {
+        throw new Error(validation.message)
+      }
+
       if (!isSupabaseConfigured()) {
         const allParts = JSON.parse(localStorage.getItem('katar_participants') || '[]')
         const newPart = {
           id: 'part-' + Date.now(),
           tournament_id: selectedId,
           name: participantName.trim(),
-          origin_block: participantAge.toString() // Age stored as string in origin_block
+          origin_block: participantAge.toString(), // Age stored as string in origin_block
+          created_at: new Date().toISOString()
         }
         localStorage.setItem('katar_participants', JSON.stringify([...allParts, newPart]))
       } else {
@@ -206,7 +222,8 @@ export default function FormInputPeserta({ tournaments }) {
         const newTeam = {
           id: newTeamId,
           tournament_id: selectedId,
-          team_name: groupName.trim()
+          team_name: groupName.trim(),
+          created_at: new Date().toISOString()
         }
 
         const newMembers = validMembers.map((name, i) => ({
@@ -301,6 +318,15 @@ export default function FormInputPeserta({ tournaments }) {
     if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     setLoading(true)
     try {
+      if (isIndividu) {
+        const tourneyId = editingItem.tournament_id || selectedId
+        const tourneyObj = tournaments.find(t => t.id === tourneyId)
+        const validation = validateAgeForCategory(editAge, tourneyObj?.category)
+        if (!validation.valid) {
+          throw new Error(validation.message)
+        }
+      }
+
       if (isSupabaseConfigured()) {
         if (isIndividu) {
           const { error } = await supabase
@@ -596,14 +622,19 @@ export default function FormInputPeserta({ tournaments }) {
         ) : (
           <div className="space-y-8">
             {(() => {
+              const getDivName = (id, defaultName) => {
+                const found = customCategories.find(c => c.id === id)
+                return found ? `Divisi ${found.name}` : defaultName
+              }
+
               const DIVISIONS = [
-                { id: 'anak_4_6', name: 'Divisi Anak-Anak 4-6 Tahun', icon: 'solar:smile-circle-bold' },
-                { id: 'anak_7_12', name: 'Divisi Anak-Anak 7-12 Tahun', icon: 'solar:smile-circle-bold' },
-                { id: 'remaja_pria', name: 'Divisi Remaja Pria', icon: 'solar:bolt-circle-bold' },
-                { id: 'remaja_putri', name: 'Divisi Remaja Putri', icon: 'solar:bolt-circle-bold' },
-                { id: 'ibu_ibu', name: 'Divisi Ibu-Ibu', icon: 'solar:user-bold' },
-                { id: 'bapak_bapak', name: 'Divisi Bapak-Bapak', icon: 'solar:user-bold' },
-                { id: 'pasangan', name: 'Divisi Pasangan', icon: 'solar:users-group-two-rounded-bold' },
+                { id: 'anak_4_6', name: getDivName('anak_4_6', 'Divisi Anak-Anak 4-6 Tahun'), icon: 'solar:smile-circle-bold' },
+                { id: 'anak_7_12', name: getDivName('anak_7_12', 'Divisi Anak-Anak 7-12 Tahun'), icon: 'solar:smile-circle-bold' },
+                { id: 'remaja_pria', name: getDivName('remaja_pria', 'Divisi Remaja Pria'), icon: 'solar:bolt-circle-bold' },
+                { id: 'remaja_putri', name: getDivName('remaja_putri', 'Divisi Remaja Putri'), icon: 'solar:bolt-circle-bold' },
+                { id: 'ibu_ibu', name: getDivName('ibu_ibu', 'Divisi Ibu-Ibu'), icon: 'solar:user-bold' },
+                { id: 'bapak_bapak', name: getDivName('bapak_bapak', 'Divisi Bapak-Bapak'), icon: 'solar:user-bold' },
+                { id: 'pasangan', name: getDivName('pasangan', 'Divisi Pasangan'), icon: 'solar:users-group-two-rounded-bold' },
               ]
 
               const getTournamentDivision = (t) => {

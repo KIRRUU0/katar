@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { animate } from 'animejs'
 import { Icon } from '@iconify/react'
+import { getCustomCategories } from './admin/adminUtils'
 
 /**
  * ScheduleCard — Displays a single tournament schedule entry.
@@ -27,6 +28,20 @@ export default function ScheduleCard({ tournament, onRegister }) {
       })
     }
   }, [])
+
+  const [customCategories, setCustomCategories] = useState(getCustomCategories())
+
+  useEffect(() => {
+    const handleCatsUpdate = () => {
+      setCustomCategories(getCustomCategories())
+    }
+    window.addEventListener('katar_categories_updated', handleCatsUpdate)
+    return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
+  }, [])
+
+  const getCatLabel = (id, fallback) => {
+    return customCategories.find(c => c.id === id)?.name || fallback
+  }
 
   // ─── Status badge config ──────────────────────────────────────
   const statusConfig = {
@@ -64,37 +79,37 @@ export default function ScheduleCard({ tournament, onRegister }) {
   const detailedCategoryConfig = {
     'anak_4_6': {
       className: 'badge bg-emerald-50 text-emerald-700 border border-emerald-200/50',
-      label: 'Anak 4-6 Tahun',
+      label: getCatLabel('anak_4_6', 'Anak 4-6 Tahun'),
       icon: 'solar:smile-circle-bold-duotone',
     },
     'anak_7_12': {
       className: 'badge bg-teal-50 text-teal-700 border border-teal-200/50',
-      label: 'Anak 7-12 Tahun',
+      label: getCatLabel('anak_7_12', 'Anak 7-12 Tahun'),
       icon: 'solar:smile-circle-bold-duotone',
     },
     'remaja_pria': {
       className: 'badge bg-blue-50 text-blue-700 border border-blue-200/50',
-      label: 'Remaja Pria',
+      label: getCatLabel('remaja_pria', 'Remaja Pria'),
       icon: 'solar:user-bold-duotone',
     },
     'remaja_putri': {
       className: 'badge bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200/50',
-      label: 'Remaja Putri',
+      label: getCatLabel('remaja_putri', 'Remaja Putri'),
       icon: 'solar:user-bold-duotone',
     },
     'ibu_ibu': {
       className: 'badge bg-pink-50 text-pink-700 border border-pink-200/50',
-      label: 'Ibu-Ibu',
+      label: getCatLabel('ibu_ibu', 'Ibu-Ibu'),
       icon: 'solar:user-bold-duotone',
     },
     'bapak_bapak': {
       className: 'badge bg-amber-50 text-amber-800 border border-amber-200/50',
-      label: 'Bapak-Bapak',
+      label: getCatLabel('bapak_bapak', 'Bapak-Bapak'),
       icon: 'solar:user-bold-duotone',
     },
     'pasangan': {
       className: 'badge bg-indigo-50 text-indigo-700 border border-indigo-200/50',
-      label: 'Pasangan / Grup',
+      label: getCatLabel('pasangan', 'Pasangan / Grup'),
       icon: 'solar:users-group-two-rounded-bold-duotone',
     },
   }
@@ -134,36 +149,59 @@ export default function ScheduleCard({ tournament, onRegister }) {
   const borderColor = borderColorMap[tournament.status] || 'border-l-abu-300'
 
   /**
-   * Format the schedule date as a readable Indonesian string.
-   * Example: "Sabtu, 1 Agustus 2026 • 08:00 WIB"
+   * Format the start and end dates as a readable Indonesian range.
+   * Example:
+   * - "Sabtu, 1 Agustus 2026 • 08:00 - 10:00 WIB" (same day)
+   * - "Sabtu, 1 Agustus 2026 • 08:00 WIB - Minggu, 2 Agustus 2026 • 10:00 WIB" (different days)
+   * - "Sabtu, 1 Agustus 2026 • 08:00 WIB" (only start time)
+   * - "Waktu belum ditentukan" (no schedule)
    */
-  const formatSchedule = (isoString) => {
-    const date = new Date(isoString)
+  const formatScheduleRange = (startIso, endIso) => {
+    if (!startIso) return 'Waktu belum ditentukan'
 
-    // Day + full date
-    const dateStr = new Intl.DateTimeFormat('id-ID', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'Asia/Jakarta',
-    }).format(date)
+    const startDate = new Date(startIso)
 
-    // Time portion
-    const timeStr = new Intl.DateTimeFormat('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: 'Asia/Jakarta',
-    }).format(date)
+    // Date formatter
+    const formatDateStr = (date) =>
+      new Intl.DateTimeFormat('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'Asia/Jakarta',
+      }).format(date)
 
-    return `${dateStr} • ${timeStr} WIB`
+    // Time formatter
+    const formatTimeStr = (date) =>
+      new Intl.DateTimeFormat('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Jakarta',
+      }).format(date)
+
+    const startDayStr = formatDateStr(startDate)
+    const startTimeStr = formatTimeStr(startDate)
+
+    if (!endIso) {
+      return `${startDayStr} • ${startTimeStr} WIB`
+    }
+
+    const endDate = new Date(endIso)
+    const endDayStr = formatDateStr(endDate)
+    const endTimeStr = formatTimeStr(endDate)
+
+    if (startDayStr === endDayStr) {
+      return `${startDayStr} • ${startTimeStr} - ${endTimeStr} WIB`
+    } else {
+      return `${startDayStr} • ${startTimeStr} WIB - ${endDayStr} • ${endTimeStr} WIB`
+    }
   }
 
-  const tournamentDate = new Date(tournament.schedule)
+  const tournamentDate = tournament.schedule ? new Date(tournament.schedule) : null
   const now = new Date()
-  const startOfAugust = new Date(tournamentDate.getFullYear(), 7, 1)
-  const isRegistrationOpen = now >= startOfAugust
+  const startOfAugust = tournamentDate ? new Date(tournamentDate.getFullYear(), 7, 1) : null
+  const isRegistrationOpen = tournamentDate ? now >= startOfAugust : false
 
   return (
     <div
@@ -174,7 +212,7 @@ export default function ScheduleCard({ tournament, onRegister }) {
       {/* Date / Time */}
       <p className="text-sm text-abu-500 flex items-center gap-1.5 mb-2">
         <Icon icon="solar:calendar-date-bold-duotone" className="w-4 h-4 text-abu-400" />
-        {formatSchedule(tournament.schedule)}
+        {formatScheduleRange(tournament.schedule, tournament.end_time)}
       </p>
 
       {/* Tournament name */}
