@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { animate } from 'animejs'
+import LazyImage from './LazyImage'
 import { Link } from 'react-router-dom'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
@@ -32,6 +32,8 @@ function NewsCarousel() {
       let supabaseNews = []
       if (isSupabaseConfigured()) {
         try {
+          const { getSupabase } = await import('../lib/supabase')
+          const supabase = await getSupabase()
           const { data, error } = await supabase
             .from('news')
             .select('*')
@@ -88,13 +90,15 @@ function NewsCarousel() {
           // Select all card elements inside the container
           const cards = sectionRef.current.querySelectorAll('.news-card')
           if (cards.length) {
-            animate(cards, {
-              opacity: [0, 1],
-              translateY: ['1.5rem', '0rem'],
-              delay: (_el, i) => i * 120,
-              duration: 600,
-              ease: 'outCubic',
-            })
+            import('animejs').then(({ animate }) => {
+              animate(cards, {
+                opacity: [0, 1],
+                translateY: ['1.5rem', '0rem'],
+                delay: (_el, i) => i * 120,
+                duration: 600,
+                ease: 'outCubic',
+              })
+            }).catch(() => {})
           }
         }
       },
@@ -134,26 +138,33 @@ function NewsCarousel() {
       ) : (
         /* ── Grid card row ─────────────────────────── */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 md:px-0">
-          {news.map((item) => (
-            <Link
-              key={item.id}
-              to={`/news/${generateSlug(item.title) || item.id}`}
-              className="news-card card flex flex-col overflow-hidden border border-abu-150 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer opacity-0"
-            >
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden bg-abu-100 flex-shrink-0">
-                <img
-                  src={parseImages(item.image_url)[0]}
-                  alt={item.title}
-                  className="w-full h-full object-cover rounded-t-2xl"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                />
-                {/* Subtle gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent rounded-t-2xl" />
-              </div>
+          {news.map((item, i) => {
+            const imageUrl = parseImages(item.image_url)[0]
+            const srcSet = imageUrl ? `${imageUrl} 1x, ${imageUrl} 2x` : undefined
+            const sizes = '(max-width: 768px) 100vw, 33vw'
+            return (
+              <Link
+                key={item.id}
+                to={`/news/${generateSlug(item.title) || item.id}`}
+                className="news-card card flex flex-col overflow-hidden border border-abu-150 hover:scale-[1.02] transition-transform hover:shadow-md cursor-pointer opacity-0"
+              >
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden bg-abu-100 flex-shrink-0">
+                  <LazyImage
+                    src={imageUrl}
+                    srcSet={srcSet}
+                    sizes={sizes}
+                    alt={item.title}
+                    className="w-full h-full object-cover rounded-t-2xl"
+                    fetchPriority={i === 0 ? 'high' : 'low'}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    forceVisible={i === 0}
+                    referrerPolicy="no-referrer"
+                  />
+                  {/* Subtle gradient overlay for readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent rounded-t-2xl" />
+                </div>
 
-              {/* Text content — flex column to align title/desc/date across cards */}
               <div className="p-5 flex flex-col flex-1">
                 <h3 className="font-heading text-lg font-bold text-abu-900 leading-snug mb-2 line-clamp-2 min-h-[3.25rem]">
                   {item.title}
@@ -172,7 +183,8 @@ function NewsCarousel() {
                 )}
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
       )}
     </section>

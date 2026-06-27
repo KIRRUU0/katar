@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { animate, createScope } from 'animejs'
 import { Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 
@@ -8,7 +7,7 @@ import NewsCarousel from '../components/NewsCarousel'
 import MediaPreview from '../components/MediaPreview'
 
 // ── Media Assets ────────────────────────────────────────────
-const welcomeVideo = '/video/welcome.gif'
+const welcomeVideo = '/video/Welcome.mp4'
 
 /**
  * HomePage — Main landing page for warga (residents).
@@ -35,17 +34,26 @@ export default function HomePage() {
   // ── Hero entrance animations ────────────────────────────────
   useEffect(() => {
     document.title = 'Karang Taruna RT 02/03 - Beranda'
-    scope.current = createScope({ root: root.current }).add(() => {
-      animate([heroTitleRef.current, heroWelcomeRef.current, heroButtonsRef.current], {
-        opacity: [0, 1],
-        translateY: [20, 0],
-        duration: 900,
-        delay: (el, i) => i * 175,
-        easing: 'easeOutExpo',
+    let mounted = true
+    let localScope = null
+    import('animejs').then((mod) => {
+      if (!mounted) return
+      const { createScope, animate } = mod
+      localScope = createScope({ root: root.current }).add(() => {
+        animate([heroTitleRef.current, heroWelcomeRef.current, heroButtonsRef.current], {
+          translateY: [20, 0],
+          duration: 900,
+          delay: (el, i) => i * 175,
+          easing: 'easeOutExpo',
+        })
       })
-    })
+      scope.current = localScope
+    }).catch(() => {})
 
-    return () => scope.current.revert()
+    return () => {
+      mounted = false
+      try { localScope?.revert() } catch (e) {}
+    }
   }, [])
 
   // Fallback: ensure hero elements become visible after animation time
@@ -53,12 +61,73 @@ export default function HomePage() {
     const timer = setTimeout(() => {
       [heroTitleRef.current, heroWelcomeRef.current, heroButtonsRef.current].forEach((el) => {
         if (!el) return
-        el.style.opacity = '1'
         el.style.transform = 'none'
         el.style.filter = 'none'
       })
     }, 1500)
     return () => clearTimeout(timer)
+  }, [])
+
+  // ── Scroll-driven sink/emerge effect for hero text ───────
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const refs = [heroTitleRef, heroWelcomeRef, heroButtonsRef]
+    let frame = null
+    let prev = -1
+
+    const max = () => Math.max(window.innerHeight * 0.6, 200)
+
+    const update = () => {
+      const y = window.scrollY || 0
+      const p = Math.min(Math.max(y / max(), 0), 1)
+      if (Math.abs(p - prev) < 0.01) return
+      prev = p
+
+      refs.forEach((r, i) => {
+        const el = r.current
+        if (!el) return
+        // slight stagger so deeper elements sink a bit later
+        const stagger = i * 0.06
+        const localP = Math.min(1, Math.max(0, (p - stagger) / (1 - stagger)))
+
+        const translateY = localP * 36 // pixels to move down (sink)
+        const scale = 1 - localP * 0.06 // subtle shrink
+        const opacity = Math.max(0, 1 - localP * 0.95)
+        const blur = localP * 6 // px
+
+        el.style.transform = `translateY(${translateY}px) scale(${scale})`
+        el.style.opacity = String(opacity)
+        el.style.filter = `blur(${blur}px)`
+        el.style.willChange = 'transform, opacity, filter'
+      })
+    }
+
+    const onScroll = () => {
+      if (frame !== null) return
+      frame = requestAnimationFrame(() => {
+        update()
+        frame = null
+      })
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    // set initial state based on current scroll
+    onScroll()
+
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+      // restore styles
+      refs.forEach((r) => {
+        const el = r.current
+        if (!el) return
+        el.style.transform = ''
+        el.style.opacity = ''
+        el.style.filter = ''
+        el.style.willChange = ''
+      })
+    }
   }, [])
 
   // ── Quote fade-in animation on scroll into view ────────────
@@ -70,24 +139,25 @@ export default function HomePage() {
       ([entry]) => {
         if (entry.isIntersecting && !quoteAnimated.current) {
           quoteAnimated.current = true
-
-          animate(quoteEl, {
-            opacity: [0, 1],
-            translateY: [20, 0],
-            duration: 800,
-            ease: 'outExpo',
-          })
-
-          const attr = quoteEl.parentElement?.querySelector('.quote-attribution')
-          if (attr) {
-            animate(attr, {
+          import('animejs').then(({ animate }) => {
+            animate(quoteEl, {
               opacity: [0, 1],
-              translateY: [10, 0],
-              duration: 600,
-              delay: 200,
+              translateY: [20, 0],
+              duration: 800,
               ease: 'outExpo',
             })
-          }
+
+            const attr = quoteEl.parentElement?.querySelector('.quote-attribution')
+            if (attr) {
+              animate(attr, {
+                opacity: [0, 1],
+                translateY: [10, 0],
+                duration: 600,
+                delay: 200,
+                ease: 'outExpo',
+              })
+            }
+          }).catch(() => {})
         }
       },
       { threshold: 0.3 }
@@ -101,13 +171,13 @@ export default function HomePage() {
     <div ref={root}>
       {/* ─── 1. HERO BANNER ──────────────────────────────────────── */}
       <section className="fixed top-0 left-0 w-full h-screen overflow-hidden bg-merah-950 z-0">
-        {/* GIF background */}
-        <img
+        {/* Video background */}
+        <video
           src={welcomeVideo}
-          alt="Welcome background"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
+          autoPlay
+          muted
+          loop
+          playsInline
           className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
 
@@ -126,8 +196,6 @@ export default function HomePage() {
             ref={heroTitleRef}
             className="hero-title font-heading text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4 md:mb-5 uppercase tracking-wide"
             style={{ 
-              opacity: 0, 
-              filter: 'blur(6px)',
               color: '#FFFFFF', 
               textShadow: '0 4px 20px rgba(0,0,0,0.85), 0 2px 4px rgba(0,0,0,0.6)' 
             }}
@@ -141,8 +209,6 @@ export default function HomePage() {
             ref={heroWelcomeRef}
             className="hero-welcome text-sm md:text-lg lg:text-xl font-normal mb-6 md:mb-8 max-w-3xl leading-relaxed text-white/85"
             style={{ 
-              opacity: 0, 
-              filter: 'blur(4px)',
               textShadow: '0 2px 10px rgba(0,0,0,0.7)' 
             }}
           >
@@ -152,7 +218,7 @@ export default function HomePage() {
           </p>
 
           {/* CTA Buttons — Berita & Organisasi */}
-          <div ref={heroButtonsRef} className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0" style={{ opacity: 0, filter: 'blur(3px)' }}>
+          <div ref={heroButtonsRef} className="hero-buttons flex flex-row items-center justify-center gap-3 sm:gap-4 w-full px-2 sm:px-0">
             <Link
               to="/news"
               className="group relative overflow-hidden rounded-xl px-4 py-2.5 sm:px-8 sm:py-3 font-bold text-merah-700 flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-xl hover:scale-105 text-sm sm:text-base flex-1 sm:flex-none max-w-[150px] sm:max-w-none"
@@ -162,7 +228,9 @@ export default function HomePage() {
               }}
             >
               <span className="absolute inset-0 bg-merah-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-              <Icon icon="solar:document-text-bold" className="w-5 h-5 relative z-10 group-hover:text-white transition-colors duration-300" />
+              <svg viewBox="0 0 24 24" className="w-5 h-5 relative z-10 group-hover:text-white transition-colors duration-300" fill="currentColor" aria-hidden="true">
+                <path d="M6 2h9a1 1 0 0 1 .707.293l5 5A1 1 0 0 1 21 8v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm3 3v3h5V5H9Zm-2 9h10v-2H7v2Zm0 4h10v-2H7v2Z" />
+              </svg>
               <span className="relative z-10 group-hover:text-white transition-colors duration-300">Berita</span>
             </Link>
             <Link
@@ -175,7 +243,9 @@ export default function HomePage() {
               }}
             >
               <span className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-              <Icon icon="solar:users-group-rounded-bold" className="w-5 h-5 relative z-10 group-hover:text-merah-700 transition-colors duration-300" />
+              <svg viewBox="0 0 24 24" className="w-5 h-5 relative z-10 group-hover:text-merah-700 transition-colors duration-300" fill="currentColor" aria-hidden="true">
+                <path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0Zm2 2h-1.143a6.005 6.005 0 0 1-11.714 0H6a5 5 0 0 0-5 5v1a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-1a5 5 0 0 0-5-5Z" />
+              </svg>
               <span className="relative z-10 group-hover:text-merah-700 transition-colors duration-300">Organisasi</span>
             </Link>
           </div>
@@ -189,10 +259,9 @@ export default function HomePage() {
         <section className="max-w-5xl mx-auto px-4 pt-8 pb-4 md:pt-14 md:pb-8 text-center">
           <div className="mx-auto max-w-5xl px-4 py-4 md:px-6 md:py-8">
             {/* Decorative quote mark */}
-            <Icon
-              icon="solar:quote-up-square-bold-duotone"
-              className="w-10 h-10 md:w-12 md:h-12 text-merah-200 mx-auto mb-3 md:mb-4"
-            />
+            <svg viewBox="0 0 24 24" className="w-10 h-10 md:w-12 md:h-12 text-merah-200 mx-auto mb-3 md:mb-4" fill="currentColor" aria-hidden="true">
+              <path d="M7 5h4l-3 7h3L8 19H4l3-7H4l3-7Zm10 0h4l-3 7h3l-3 7h-4l3-7h-3l3-7Z" />
+            </svg>
             <blockquote
               ref={quoteRef}
               className="font-heading text-lg md:text-2xl lg:text-3xl font-semibold text-abu-900 leading-relaxed italic text-center tracking-tight max-w-5xl mx-auto text-balance"

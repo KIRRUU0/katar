@@ -163,13 +163,9 @@ export default function MedalTable() {
             aria-label="Pilih kategori"
           >
             <option value="semua">Semua Kategori</option>
-            <option value="anak_4_6">{getCatLabel('anak_4_6', 'Anak-Anak 4-6')}</option>
-            <option value="anak_7_12">{getCatLabel('anak_7_12', 'Anak-Anak 7-12')}</option>
-            <option value="remaja_pria">{getCatLabel('remaja_pria', 'Remaja Pria')}</option>
-            <option value="remaja_putri">{getCatLabel('remaja_putri', 'Remaja Putri')}</option>
-            <option value="ibu_ibu">{getCatLabel('ibu_ibu', 'Ibu-Ibu')}</option>
-            <option value="bapak_bapak">{getCatLabel('bapak_bapak', 'Bapak-Bapak')}</option>
-            <option value="pasangan">{getCatLabel('pasangan', 'Pasangan')}</option>
+            {customCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
           </select>
 
           {/* Year dropdown */}

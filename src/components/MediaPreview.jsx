@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { animate } from 'animejs'
+import LazyImage from './LazyImage.jsx'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { parseImages } from './admin/adminUtils'
@@ -22,6 +22,8 @@ function MediaPreview() {
       let supabasePhotos = []
       if (isSupabaseConfigured()) {
         try {
+          const { getSupabase } = await import('../lib/supabase')
+          const supabase = await getSupabase()
           // Fetch news URLs for filtering
           const { data: newsData } = await supabase.from('news').select('image_url')
           newsData?.forEach(n => {
@@ -116,14 +118,16 @@ function MediaPreview() {
 
           const cards = sectionRef.current.querySelectorAll('.media-card')
           if (cards.length) {
-            animate(cards, {
-              opacity: [0, 1],
-              scale: [0.95, 1],
-              translateY: ['1.5rem', '0rem'],
-              delay: (_el, i) => i * 100,
-              duration: 600,
-              ease: 'outBack',
-            })
+            import('animejs').then(({ animate }) => {
+              animate(cards, {
+                opacity: [0, 1],
+                scale: [0.95, 1],
+                translateY: ['1.5rem', '0rem'],
+                delay: (_el, i) => i * 100,
+                duration: 600,
+                ease: 'outBack',
+              })
+            }).catch(() => {})
           }
         }
       },
@@ -132,6 +136,26 @@ function MediaPreview() {
 
     observer.observe(sectionRef.current)
     return () => observer.disconnect()
+  }, [photos])
+
+  // Preload primary gallery image for faster paint
+  useEffect(() => {
+    if (!photos || !photos.length) return
+    try {
+      const firstUrl = parseImages(photos[0].image_url)[0]
+      if (!firstUrl) return
+      const link = document.createElement('link')
+      link.rel = 'preload'
+      link.as = 'image'
+      link.href = firstUrl
+      link.onload = () => {}
+      document.head.appendChild(link)
+      return () => {
+        try { document.head.removeChild(link) } catch {}
+      }
+    } catch (e) {
+      // ignore
+    }
   }, [photos])
 
   return (
@@ -162,33 +186,41 @@ function MediaPreview() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4 md:px-0">
-          {photos.map((item) => (
-            <Link
-              key={item.id}
-              to="/media"
-              className="media-card group relative block h-48 md:h-60 overflow-hidden rounded-2xl shadow-sm hover:shadow-md cursor-pointer transform opacity-0"
-              style={{ willChange: 'transform, opacity' }}
-            >
-              <img
-                src={parseImages(item.image_url)[0]}
-                alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
-                loading="lazy"
-                referrerPolicy="no-referrer"
-              />
-              {/* Overlay with title — uses dedicated CSS for guaranteed visibility */}
-              <div className="media-card-overlay">
-                <div className="media-card-info">
-                  <span className="media-card-badge inline-flex items-center self-start text-[10px] uppercase font-extrabold tracking-wider bg-merah-600 text-white px-2 py-0.5 rounded">
-                    Tahun {item.year}
-                  </span>
-                  <h3 className="media-card-title">
-                    {item.title}
-                  </h3>
+          {photos.map((item, i) => {
+            const imageUrl = parseImages(item.image_url)[0]
+            const srcSet = imageUrl ? `${imageUrl} 1x, ${imageUrl} 2x` : undefined
+            const sizes = '(max-width: 768px) 50vw, 25vw'
+            return (
+              <Link
+                key={item.id}
+                to="/media"
+                className="media-card group relative block h-48 md:h-60 overflow-hidden rounded-2xl shadow-sm hover:shadow-md cursor-pointer transform opacity-0"
+                style={{ willChange: 'transform, opacity' }}
+              >
+                <LazyImage
+                  src={imageUrl}
+                  srcSet={srcSet}
+                  sizes={sizes}
+                  alt={item.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : 'low'}
+                  forceVisible={i === 0}
+                  referrerPolicy="no-referrer"
+                />
+                <div className="media-card-overlay">
+                  <div className="media-card-info">
+                    <span className="media-card-badge inline-flex items-center self-start text-[10px] uppercase font-extrabold tracking-wider bg-merah-600 text-white px-2 py-0.5 rounded">
+                      Tahun {item.year}
+                    </span>
+                    <h3 className="media-card-title">
+                      {item.title}
+                    </h3>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       )}
     </section>

@@ -4,39 +4,48 @@ export const FALLBACK_YEARS = [2026, 2025, 2024]
 export const DEMO_TOURNAMENTS = []
 
 export const getCustomCategories = () => {
-  const defaultCats = [
-    { id: 'anak_4_6', name: 'Anak-Anak 4-6 Tahun', type: 'individu' },
-    { id: 'anak_7_12', name: 'Anak-Anak 7-12 Tahun', type: 'individu' },
-    { id: 'remaja_pria', name: 'Remaja Pria', type: 'individu' },
-    { id: 'remaja_putri', name: 'Remaja Putri', type: 'individu' },
-    { id: 'ibu_ibu', name: 'Ibu-Igu', type: 'individu' },
-    { id: 'bapak_bapak', name: 'Bapak-Bapak', type: 'individu' },
-    { id: 'pasangan', name: 'Pasangan', type: 'grup' },
-  ]
-  
-  // Fix typo in Ibu-Igu to Ibu-Ibu
-  defaultCats[4].name = 'Ibu-Ibu'
-  
   const local = localStorage.getItem('katar_custom_categories')
   if (local) {
     try {
       const parsed = JSON.parse(local)
-      return defaultCats.map(cat => {
-        const found = parsed.find(p => p.id === cat.id || p.category_id === cat.id)
-        return found ? { ...cat, name: found.name || found.display_name } : cat
-      })
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => {
+          const name = item.name || item.display_name || ''
+          const id = item.id || item.category_id || ''
+          return {
+            id: id,
+            name: name,
+            type: id.startsWith('grup_') ? 'grup' : 'individu'
+          }
+        })
+      }
     } catch (e) {
       console.warn('Failed to parse katar_custom_categories:', e)
-      return defaultCats
     }
   }
-  return defaultCats
+  return [] // Dibuat kosong secara default
 }
 
 export const getCategoryName = (categoryId) => {
   const categories = getCustomCategories()
   const found = categories.find(c => c.id === categoryId)
-  return found ? found.name : categoryId
+  if (found) return found.name
+
+  // Legacy mappings for old database records (if they match default names)
+  if (categoryId === 'anak_4_6' || categoryId === '4-6') return 'Anak 4-6'
+  if (categoryId === 'anak_7_12' || categoryId === '7-12') return 'Anak 7-12'
+  if (categoryId === 'remaja_pria') return 'Remaja Pria'
+  if (categoryId === 'remaja_putri') return 'Remaja Putri'
+  if (categoryId === 'ibu_ibu') return 'Ibu-Ibu'
+  if (categoryId === 'bapak_bapak') return 'Bapak-Bapak'
+  if (categoryId === 'pasangan') return 'Pasangan'
+
+  // If the category ID is a generated ID (starts with cat_, ind_, grup_) and not found, return a friendly action instruction
+  if (categoryId && (categoryId.startsWith('cat_') || categoryId.startsWith('ind_') || categoryId.startsWith('grup_'))) {
+    return 'Pilih Umur (Edit Lomba)'
+  }
+
+  return categoryId || ''
 }
 
 export const uploadImage = async (file) => {
@@ -141,6 +150,19 @@ export const parseImages = (imageUrl) => {
 
 export const getNormalizedCategory = (category, type, name = '') => {
   const cat = category || ''
+  
+  // If custom categories are empty, return empty string (as requested)
+  const customCategories = getCustomCategories()
+  if (customCategories.length === 0) {
+    return ''
+  }
+
+  // Check if it's already a valid custom category ID
+  if (customCategories.some(c => c.id === cat)) {
+    return cat
+  }
+
+  // Legacy normalizations for old database records (if they match default names)
   if (cat === 'anak_4_6' || cat === '4-6') return 'anak_4_6'
   if (cat === 'anak_7_12' || cat === '7-12') return 'anak_7_12'
   if (cat === 'remaja_pria' || cat === 'remaja pria') return 'remaja_pria'
@@ -158,7 +180,65 @@ export const getNormalizedCategory = (category, type, name = '') => {
   if (lowerName.includes('bapak') || lowerName.includes('pria')) return 'bapak_bapak'
   if (lowerName.includes('pasangan') || lowerName.includes('grup') || type === 'grup') return 'pasangan'
 
-  return 'bapak_bapak'
+  return cat || ''
+}
+
+export const getCategoryStyle = (name = '', type = 'individu') => {
+  const lowerName = name.toLowerCase()
+  if (type === 'grup' || lowerName.includes('pasangan') || lowerName.includes('grup') || lowerName.includes('campuran') || lowerName.includes('ganda') || lowerName.includes('team') || lowerName.includes('tim')) {
+    return {
+      className: 'badge bg-indigo-50 text-indigo-700 border border-indigo-200/50',
+      label: name,
+      icon: 'solar:users-group-two-rounded-bold-duotone',
+    }
+  }
+  if (lowerName.includes('4-6') || lowerName.includes('balita')) {
+    return {
+      className: 'badge bg-emerald-50 text-emerald-700 border border-emerald-200/50',
+      label: name,
+      icon: 'solar:smile-circle-bold-duotone',
+    }
+  }
+  if (lowerName.includes('7-12') || lowerName.includes('anak')) {
+    return {
+      className: 'badge bg-teal-50 text-teal-700 border border-teal-200/50',
+      label: name,
+      icon: 'solar:smile-circle-bold-duotone',
+    }
+  }
+  if (lowerName.includes('remaja') && (lowerName.includes('putri') || lowerName.includes('wanita') || lowerName.includes('perempuan'))) {
+    return {
+      className: 'badge bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200/50',
+      label: name,
+      icon: 'solar:user-bold-duotone',
+    }
+  }
+  if (lowerName.includes('remaja')) {
+    return {
+      className: 'badge bg-blue-50 text-blue-700 border border-blue-200/50',
+      label: name,
+      icon: 'solar:user-bold-duotone',
+    }
+  }
+  if (lowerName.includes('ibu') || lowerName.includes('putri') || lowerName.includes('wanita')) {
+    return {
+      className: 'badge bg-pink-50 text-pink-700 border border-pink-200/50',
+      label: name,
+      icon: 'solar:user-bold-duotone',
+    }
+  }
+  if (lowerName.includes('bapak') || lowerName.includes('pria') || lowerName.includes('putra') || lowerName.includes('dewasa')) {
+    return {
+      className: 'badge bg-amber-50 text-amber-800 border border-amber-200/50',
+      label: name,
+      icon: 'solar:user-bold-duotone',
+    }
+  }
+  return {
+    className: 'badge bg-abu-50 text-abu-700 border border-abu-200/50',
+    label: name || 'Umum',
+    icon: 'solar:user-bold',
+  }
 }
 
 export const syncAllExistingNewsImages = async () => {

@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { animate } from 'animejs'
 import { Icon } from '@iconify/react'
 
 /**
@@ -26,87 +25,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
 
-  // Refs for animatable elements
-  const mobileMenuRef = useRef(null)
-  const topBarRef = useRef(null)
-  const middleBarRef = useRef(null)
-  const bottomBarRef = useRef(null)
-
-  // ── Hamburger → X animation ──────────────────────────────
-  useEffect(() => {
-    if (!topBarRef.current || !middleBarRef.current || !bottomBarRef.current) return
-
-    if (menuOpen) {
-      // Top bar rotates 45° and translates down to center
-      animate(topBarRef.current, {
-        rotate: 45,
-        translateY: 8,
-        duration: 300,
-        ease: 'outCubic',
-      })
-      // Middle bar fades out
-      animate(middleBarRef.current, {
-        opacity: 0,
-        duration: 200,
-        ease: 'outCubic',
-      })
-      // Bottom bar rotates -45° and translates up to center
-      animate(bottomBarRef.current, {
-        rotate: -45,
-        translateY: -8,
-        duration: 300,
-        ease: 'outCubic',
-      })
-    } else {
-      // Reset all bars to original position
-      animate(topBarRef.current, {
-        rotate: 0,
-        translateY: 0,
-        duration: 300,
-        ease: 'outCubic',
-      })
-      animate(middleBarRef.current, {
-        opacity: 1,
-        duration: 200,
-        ease: 'outCubic',
-      })
-      animate(bottomBarRef.current, {
-        rotate: 0,
-        translateY: 0,
-        duration: 300,
-        ease: 'outCubic',
-      })
-    }
-  }, [menuOpen])
-
-  // ── Mobile menu slide-down / slide-up animation ──────────
-  useEffect(() => {
-    if (!mobileMenuRef.current) return
-
-    if (menuOpen) {
-      // Make visible first, then animate in
-      mobileMenuRef.current.style.display = 'flex'
-      animate(mobileMenuRef.current, {
-        opacity: [0, 1],
-        translateY: ['-0.5rem', '0rem'],
-        duration: 350,
-        ease: 'outCubic',
-      })
-    } else {
-      animate(mobileMenuRef.current, {
-        opacity: [1, 0],
-        translateY: ['0rem', '-0.5rem'],
-        duration: 250,
-        ease: 'inCubic',
-        onComplete: () => {
-          if (mobileMenuRef.current) {
-            mobileMenuRef.current.style.display = 'none'
-          }
-        },
-      })
-    }
-  }, [menuOpen])
-
   // Close mobile menu on route change
   useEffect(() => {
     setMenuOpen(false)
@@ -122,7 +40,7 @@ export default function Navbar() {
 
           {/* ── Logo (Sisi Kiri) ───────────────────────────── */}
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Logo Iremda" className="w-8 h-8 object-contain flex-shrink-0" />
+            <img src="/logo.webp" alt="Logo Iremda" className="w-8 h-8 object-contain flex-shrink-0" />
             <span className="text-lg md:text-xl font-bold font-heading text-merah-700 tracking-tight">
               02/03
             </span>
@@ -197,16 +115,19 @@ export default function Navbar() {
             >
               <div className="relative flex flex-col items-center justify-center w-6 h-6">
                 <span
-                  ref={topBarRef}
-                  className="absolute top-[5px] block h-0.5 w-5 rounded-full bg-current origin-center"
+                  className={`absolute block h-0.5 w-5 rounded-full bg-current origin-center transition-all duration-300 top-[5px] ${
+                    menuOpen ? 'rotate-45 translate-y-[6px]' : ''
+                  }`}
                 />
                 <span
-                  ref={middleBarRef}
-                  className="absolute top-[11px] block h-0.5 w-5 rounded-full bg-current origin-center"
+                  className={`absolute block h-0.5 w-5 rounded-full bg-current origin-center transition-all duration-300 top-[11px] ${
+                    menuOpen ? 'opacity-0 scale-0' : ''
+                  }`}
                 />
                 <span
-                  ref={bottomBarRef}
-                  className="absolute top-[17px] block h-0.5 w-5 rounded-full bg-current origin-center"
+                  className={`absolute block h-0.5 w-5 rounded-full bg-current origin-center transition-all duration-300 top-[17px] ${
+                    menuOpen ? '-rotate-45 -translate-y-[6px]' : ''
+                  }`}
                 />
               </div>
             </button>
@@ -217,9 +138,9 @@ export default function Navbar() {
 
       {/* ── Mobile dropdown menu ────────────────────────── */}
       <div
-        ref={mobileMenuRef}
-        className="absolute top-[62px] left-0 right-0 flex-col gap-1 px-4 py-3 md:hidden bg-white/95 backdrop-blur-md border border-white/20 shadow-lg rounded-2xl"
-        style={{ display: 'none' }}
+        className={`absolute top-[62px] left-0 right-0 flex flex-col gap-1 px-4 py-3 md:hidden bg-white/95 backdrop-blur-md border border-white/20 shadow-lg rounded-2xl transition-all duration-300 origin-top ${
+          menuOpen ? 'opacity-100 scale-y-100 translate-y-0 visible' : 'opacity-0 scale-y-95 -translate-y-2 invisible pointer-events-none'
+        }`}
       >
         {NAV_LINKS.map((link) => (
           <Link

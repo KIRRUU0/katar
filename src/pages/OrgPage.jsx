@@ -208,7 +208,7 @@ export default function OrgPage() {
         {/* Uploaded Logo Image */}
         <div className="relative w-28 h-28 md:w-36 md:h-36 mx-auto mb-5">
           <img
-            src="/logo.png"
+            src="/logo.webp"
             alt="Logo Karang Taruna Iremda"
             className="w-full h-full object-contain hover:scale-105 transition-transform duration-300 drop-shadow-md"
           />

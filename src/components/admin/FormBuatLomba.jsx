@@ -11,7 +11,7 @@ export default function FormBuatLomba({ onTournamentAdded }) {
   const [form, setForm] = useState({
     year: new Date().getFullYear(),
     name: '',
-    category: 'anak_4_6',
+    category: getCustomCategories()[0]?.id || '',
     location: '',
     schedule: '',
     endTime: '',
@@ -38,7 +38,9 @@ export default function FormBuatLomba({ onTournamentAdded }) {
   // Listen to custom categories updates
   useEffect(() => {
     const handleCatsUpdate = () => {
-      setCategories(getCustomCategories())
+      const cats = getCustomCategories()
+      setCategories(cats)
+      setForm(f => ({ ...f, category: f.category || cats[0]?.id || '' }))
     }
     window.addEventListener('katar_categories_updated', handleCatsUpdate)
     return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
@@ -81,11 +83,26 @@ export default function FormBuatLomba({ onTournamentAdded }) {
 
         setToast({ message: `(Demo) Lomba "${form.name}" berhasil disimpan!`, type: 'success' })
       } else {
-        const chosenYearObj = dbYears.find(y => y.year_number === form.year)
-        const yearId = chosenYearObj ? chosenYearObj.id : null
+        let chosenYearObj = dbYears.find(y => y.year_number === form.year)
+        let yearId = chosenYearObj ? chosenYearObj.id : null
 
         if (!yearId) {
-          throw new Error(`Tahun ${form.year} tidak ditemukan di database. Pastikan tabel years sudah terisi.`)
+          // Auto-insert current year to database if not present
+          const { data: newYear, error: yearErr } = await supabase
+            .from('years')
+            .insert({ year_number: form.year })
+            .select()
+          
+          if (yearErr) {
+            throw new Error(`Gagal mendaftarkan tahun ${form.year} ke database: ${yearErr.message}`)
+          }
+
+          if (newYear && newYear[0]) {
+            yearId = newYear[0].id
+            setDbYears(prev => [...prev, newYear[0]])
+          } else {
+            throw new Error(`Tahun ${form.year} gagal didaftarkan ke database.`)
+          }
         }
 
         const { error } = await supabase.from('tournaments').insert({
@@ -103,10 +120,14 @@ export default function FormBuatLomba({ onTournamentAdded }) {
         setToast({ message: `Lomba "${form.name}" berhasil disimpan!`, type: 'success' })
       }
       // Reset form
-      setForm({ year: new Date().getFullYear(), name: '', category: 'anak_4_6', location: '', schedule: '', endTime: '', pj: '' })
+      setForm({ year: new Date().getFullYear(), name: '', category: categories[0]?.id || '', location: '', schedule: '', endTime: '', pj: '' })
       onTournamentAdded?.()
     } catch (err) {
-      setToast({ message: `Gagal: ${err.message}`, type: 'error' })
+      let msg = err.message
+      if (msg.includes('violates check constraint "tournaments_category_check"')) {
+        msg = 'Gagal menyimpan: Batasan database aktif. Silakan jalankan perintah SQL "ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS tournaments_category_check;" di dashboard Supabase SQL Editor Anda untuk mengaktifkan kategori tak terbatas.'
+      }
+      setToast({ message: msg, type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -122,34 +143,23 @@ export default function FormBuatLomba({ onTournamentAdded }) {
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Year + Category row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-abu-700 mb-1">Tahun</label>
-            <select
-              className="form-select focus-ring"
-              value={form.year}
-              onChange={(e) => updateField('year', Number(e.target.value))}
-              required
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-abu-700 mb-1">Kategori Partisipan</label>
-            <select
-              className="form-select focus-ring"
-              value={form.category}
-              onChange={(e) => updateField('category', e.target.value)}
-              required
-            >
-              {categories.map((cat) => (
+        {/* Category row */}
+        <div>
+          <label className="block text-sm font-semibold text-abu-700 mb-1">Kategori Partisipan</label>
+          <select
+            className="form-select focus-ring"
+            value={form.category}
+            onChange={(e) => updateField('category', e.target.value)}
+            required
+          >
+            {categories.length === 0 ? (
+              <option value="">(Belum ada kategori partisipan)</option>
+            ) : (
+              categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
+              ))
+            )}
+          </select>
         </div>
 
         {/* Nama Lomba */}

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
-import { getNormalizedCategory, getCustomCategories, validateAgeForCategory } from './adminUtils'
+import { getNormalizedCategory, getCustomCategories, validateAgeForCategory, getCategoryName } from './adminUtils'
 
 export default function FormInputPeserta({ tournaments }) {
   const [selectedId, setSelectedId] = useState('')
@@ -425,7 +425,7 @@ export default function FormInputPeserta({ tournaments }) {
           <option value="">— Pilih lomba —</option>
           {tournaments.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.name} ({t.type === 'individu' ? 'Individu' : 'Grup'}) — {t.year}
+              {t.name} ({t.type === 'individu' ? 'Individu' : 'Grup'})
             </option>
           ))}
         </select>
@@ -434,8 +434,14 @@ export default function FormInputPeserta({ tournaments }) {
       {/* Conditional form based on tournament type */}
       {selected && isIndividu && (
         <div className="space-y-4 pt-2 border-t border-abu-200">
-          <p className="text-sm text-abu-500 pt-3">
-            Mode: <span className="badge badge-individu">Individu</span>
+          <p className="text-sm text-abu-500 pt-3 flex flex-wrap gap-2 items-center">
+            Kategori: <span className="badge badge-individu">Individu</span>
+            {selected.category && (
+              <span className="text-abu-400">|</span>
+            )}
+            {selected.category && (
+              <span>Umur: <strong className="text-abu-700 font-semibold">{getCategoryName(selected.category)}</strong></span>
+            )}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -475,8 +481,14 @@ export default function FormInputPeserta({ tournaments }) {
 
       {selected && !isIndividu && (
         <div className="space-y-4 pt-2 border-t border-abu-200">
-          <p className="text-sm text-abu-500 pt-3">
-            Mode: <span className="badge badge-grup">Grup</span>
+          <p className="text-sm text-abu-500 pt-3 flex flex-wrap gap-2 items-center">
+            Kategori: <span className="badge badge-grup">Grup</span>
+            {selected.category && (
+              <span className="text-abu-400">|</span>
+            )}
+            {selected.category && (
+              <span>Umur: <strong className="text-abu-700 font-semibold">{getCategoryName(selected.category)}</strong></span>
+            )}
           </p>
 
           <div>
@@ -622,20 +634,22 @@ export default function FormInputPeserta({ tournaments }) {
         ) : (
           <div className="space-y-8">
             {(() => {
-              const getDivName = (id, defaultName) => {
-                const found = customCategories.find(c => c.id === id)
-                return found ? `Divisi ${found.name}` : defaultName
-              }
-
-              const DIVISIONS = [
-                { id: 'anak_4_6', name: getDivName('anak_4_6', 'Divisi Anak-Anak 4-6 Tahun'), icon: 'solar:smile-circle-bold' },
-                { id: 'anak_7_12', name: getDivName('anak_7_12', 'Divisi Anak-Anak 7-12 Tahun'), icon: 'solar:smile-circle-bold' },
-                { id: 'remaja_pria', name: getDivName('remaja_pria', 'Divisi Remaja Pria'), icon: 'solar:bolt-circle-bold' },
-                { id: 'remaja_putri', name: getDivName('remaja_putri', 'Divisi Remaja Putri'), icon: 'solar:bolt-circle-bold' },
-                { id: 'ibu_ibu', name: getDivName('ibu_ibu', 'Divisi Ibu-Ibu'), icon: 'solar:user-bold' },
-                { id: 'bapak_bapak', name: getDivName('bapak_bapak', 'Divisi Bapak-Bapak'), icon: 'solar:user-bold' },
-                { id: 'pasangan', name: getDivName('pasangan', 'Divisi Pasangan'), icon: 'solar:users-group-two-rounded-bold' },
-              ]
+              const DIVISIONS = customCategories.map((cat) => {
+                const isGroup = cat.type === 'grup' || cat.name?.toLowerCase().includes('pasangan') || cat.name?.toLowerCase().includes('grup')
+                const isKids = cat.name?.toLowerCase().includes('anak') || cat.name?.toLowerCase().includes('4-6') || cat.name?.toLowerCase().includes('7-12')
+                const isYouth = cat.name?.toLowerCase().includes('remaja')
+                
+                let icon = 'solar:user-bold'
+                if (isGroup) icon = 'solar:users-group-two-rounded-bold'
+                else if (isKids) icon = 'solar:smile-circle-bold'
+                else if (isYouth) icon = 'solar:bolt-circle-bold'
+                
+                return {
+                  id: cat.id,
+                  name: `Divisi ${cat.name}`,
+                  icon: icon
+                }
+              })
 
               const getTournamentDivision = (t) => {
                 return getNormalizedCategory(t.category, t.type, t.name)

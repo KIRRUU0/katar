@@ -70,50 +70,72 @@ function LiveTicker() {
     fetchAnnouncements()
 
     // ── Realtime subscription ────────────────────────────
-    const channel = supabase
-      .channel('announcements-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'announcements' },
-        () => {
-          // Re-fetch on any change (INSERT, UPDATE, DELETE)
-          fetchAnnouncements()
-        }
-      )
-      .subscribe()
+    // create a uniquely-named channel to avoid "already subscribed" errors
+    const channelName = `announcements-realtime-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    let channel
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'announcements' },
+          () => {
+            // Re-fetch on any change (INSERT, UPDATE, DELETE)
+            fetchAnnouncements()
+          }
+        )
+        .subscribe()
+    } catch (err) {
+      console.warn('LiveTicker: failed to subscribe to realtime channel', err)
+    }
 
     return () => {
       supabase.removeChannel(channel)
     }
   }, [])
 
-  // ── Hide when popup is open ──────────────────────────────
+  // ── Hide when popup is open (use lightweight global flag + events)
   useEffect(() => {
-    const handlePopupOpened = () => setIsPopupOpen(true)
-    const handlePopupClosed = () => setIsPopupOpen(false)
+    const handlePopupOpened = () => {
+      if (!isPopupOpen) setIsPopupOpen(true)
+    }
+    const handlePopupClosed = () => {
+      if (isPopupOpen) setIsPopupOpen(false)
+    }
 
     window.addEventListener('katar_popup_opened', handlePopupOpened)
     window.addEventListener('katar_popup_closed', handlePopupClosed)
 
-    // Initial state based on existing popups
-    const popups = document.querySelectorAll('.fixed.inset-0')
-    setIsPopupOpen(popups.length > 0)
+    // Initial state: prefer global flag if present, fallback to false
+    try {
+      const initial = Boolean(window.__katar_popup_open)
+      setIsPopupOpen(initial)
+    } catch (e) {
+      setIsPopupOpen(false)
+    }
 
     return () => {
       window.removeEventListener('katar_popup_opened', handlePopupOpened)
       window.removeEventListener('katar_popup_closed', handlePopupClosed)
     }
-  }, [])
+  }, [isPopupOpen])
 
   const tickerText = useMemo(() => {
     if (!announcements.length) return ''
 
-    let repeatedAnnouncements = [...announcements]
-    while (repeatedAnnouncements.join('   ●   ').length < 200) {
-      repeatedAnnouncements = [...repeatedAnnouncements, ...announcements]
+    // Repeat until reasonable length for marquee; lower threshold for performance
+    const sep = '   ●   '
+    let repeatedAnnouncements = announcements.slice()
+    let joined = repeatedAnnouncements.join(sep)
+    const minLen = 120
+    while (joined.length < minLen) {
+      repeatedAnnouncements = repeatedAnnouncements.concat(announcements)
+      joined = repeatedAnnouncements.join(sep)
+      // safety: avoid infinite loop
+      if (repeatedAnnouncements.length > 50) break
     }
 
-    return repeatedAnnouncements.join('   ●   ')
+    return joined
   }, [announcements])
 
   // Don't render until we have announcements, or if a popup is open

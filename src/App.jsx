@@ -1,19 +1,19 @@
-import { memo, useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { Icon } from '@iconify/react'
 import Navbar from './components/Navbar'
-import LiveTicker from './components/LiveTicker'
-import HomePage from './pages/HomePage'
-import LeaguePage from './pages/LeaguePage'
-import AdminPage from './pages/AdminPage'
-import NewsDetailPage from './pages/NewsDetailPage'
-import NewsListPage from './pages/NewsListPage'
-import OrgPage from './pages/OrgPage'
-import MediaPage from './pages/MediaPage'
-import { recordPageView } from './lib/analytics'
-import PopupBanner from './components/PopupBanner'
-import { supabase, isSupabaseConfigured } from './lib/supabase'
+const LiveTicker = lazy(() => import('./components/LiveTicker'))
+const HomePage = lazy(() => import('./pages/HomePage'))
+const LeaguePage = lazy(() => import('./pages/LeaguePage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
+const NewsListPage = lazy(() => import('./pages/NewsListPage'))
+const OrgPage = lazy(() => import('./pages/OrgPage'))
+const MediaPage = lazy(() => import('./pages/MediaPage'))
+// Analytics is loaded lazily to avoid blocking initial render
+const PopupBanner = lazy(() => import('./components/PopupBanner'))
+import { isSupabaseConfigured } from './lib/supabase'
 
 const BackToTopButton = memo(function BackToTopButton() {
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -135,7 +135,9 @@ export default function App() {
 
   // Record page view on mount (once per session)
   useEffect(() => {
-    recordPageView()
+    import('./lib/analytics').then(({ recordPageView }) => {
+      try { recordPageView() } catch (e) {}
+    }).catch(() => {})
   }, [])
 
   // Sync custom category settings from Supabase on mount
@@ -143,10 +145,12 @@ export default function App() {
     if (!isSupabaseConfigured()) return
     const syncCategories = async () => {
       try {
+        const { getSupabase } = await import('./lib/supabase')
+        const supabase = await getSupabase()
         const { data, error } = await supabase
           .from('category_settings')
           .select('*')
-        if (!error && data && data.length > 0) {
+        if (!error && data) {
           const list = data.map(item => ({
             id: item.category_id,
             name: item.display_name
@@ -171,8 +175,10 @@ export default function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen bg-abu-50 pb-10">
-        {/* Banner Announcement Popup */}
-        <PopupBanner />
+        {/* Banner Announcement Popup (deferred) */}
+        <Suspense fallback={null}>
+          <PopupBanner />
+        </Suspense>
 
         {/* Persistent navigation */}
         <Navbar />
@@ -180,19 +186,25 @@ export default function App() {
         {/* Page content with top padding for fixed navbar */}
         <main className={isHome ? "" : "pt-20"}>
           <PageTransition>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/league" element={<LeaguePage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/news" element={<NewsListPage />} />
-              <Route path="/news/:slug" element={<NewsDetailPage />} />
-              <Route path="/org" element={<OrgPage />} />
-              <Route path="/media" element={<MediaPage />} />
-            </Routes>
+            <Suspense fallback={<div className="min-h-screen" />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/league" element={<LeaguePage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/news" element={<NewsListPage />} />
+                <Route path="/news/:slug" element={<NewsDetailPage />} />
+                <Route path="/org" element={<OrgPage />} />
+                <Route path="/media" element={<MediaPage />} />
+              </Routes>
+            </Suspense>
           </PageTransition>
         </main>
 
         {/* Footer */}
+        {/* Live ticker (deferred) */}
+        <Suspense fallback={null}>
+          <LiveTicker />
+        </Suspense>
         <footer className={`relative bg-white border-t border-abu-200 text-abu-800 ${isHome ? 'mt-0' : 'mt-12'}`}>
           {/* Top Decorative bar */}
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-merah-700 via-emas to-merah-600" />
@@ -205,7 +217,7 @@ export default function App() {
                 {/* Brand Logo & Name */}
                 <div className="flex items-center gap-2.5">
                   <img 
-                    src="/logo.png" 
+                    src="/logo.webp" 
                     alt="Logo Katar" 
                     className="w-8 h-8 object-contain" 
                   />
@@ -277,9 +289,6 @@ export default function App() {
         </footer>
 
         <BackToTopButton />
-
-        {/* Global sticky bottom ticker */}
-        <LiveTicker />
       </div>
     </AuthProvider>
   )

@@ -99,6 +99,29 @@ function CountdownTimer() {
     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
   ], [timeLeft])
 
+  // Memoized Digit component so only changed digits re-render
+  const Digit = memo(function Digit({ value, label, innerRef }) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="flex items-center gap-3 md:gap-5">
+          <div
+            ref={innerRef}
+            className="countdown-digit flex items-center justify-center
+                       w-16 h-18 md:w-24 md:h-28
+                       text-2xl md:text-4xl font-heading font-bold
+                       select-none"
+          >
+            {value}
+          </div>
+        </div>
+
+        <span className="mt-2 text-xs md:text-sm text-abu-500 font-medium">
+          {label}
+        </span>
+      </div>
+    )
+  }, (prev, next) => prev.value === next.value && prev.label === next.label)
+
   return (
     <div className="card p-6 md:p-8">
       {/* Section title */}
@@ -121,27 +144,8 @@ function CountdownTimer() {
         ) : (
         /* Digit boxes row */
         <div className="flex items-center justify-center gap-3 md:gap-5">
-          {digits.map((digit, index) => (
-            <div key={digit.key} className="flex flex-col items-center">
-              {/* Separator colon between digit groups (not before the first) */}
-              <div className="flex items-center gap-3 md:gap-5">
-                {/* Digit box */}
-                <div
-                  ref={digit.ref}
-                  className="countdown-digit flex items-center justify-center
-                             w-16 h-18 md:w-24 md:h-28
-                             text-2xl md:text-4xl font-heading font-bold
-                             select-none"
-                >
-                  {digit.value}
-                </div>
-              </div>
-
-              {/* Label below digit box */}
-              <span className="mt-2 text-xs md:text-sm text-abu-500 font-medium">
-                {digit.label}
-              </span>
-            </div>
+          {digits.map((digit) => (
+            <Digit key={digit.key} value={digit.value} label={digit.label} innerRef={digit.ref} />
           ))}
         </div>
       )}

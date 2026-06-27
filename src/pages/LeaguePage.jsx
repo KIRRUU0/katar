@@ -123,16 +123,19 @@ export default function LeaguePage() {
     [tournaments, activeFilter]
   )
 
-  const filterOptions = useMemo(() => [
-    { id: 'semua', label: 'Semua Lomba', icon: 'solar:list-bold-duotone' },
-    { id: 'anak_4_6', label: getCatLabel('anak_4_6', 'Anak 4-6'), icon: 'solar:user-bold-duotone' },
-    { id: 'anak_7_12', label: getCatLabel('anak_7_12', 'Anak 7-12'), icon: 'solar:user-bold-duotone' },
-    { id: 'remaja_pria', label: getCatLabel('remaja_pria', 'Remaja Pria'), icon: 'solar:user-bold-duotone' },
-    { id: 'remaja_putri', label: getCatLabel('remaja_putri', 'Remaja Putri'), icon: 'solar:user-bold-duotone' },
-    { id: 'ibu_ibu', label: getCatLabel('ibu_ibu', 'Ibu-Ibu'), icon: 'solar:user-bold-duotone' },
-    { id: 'bapak_bapak', label: getCatLabel('bapak_bapak', 'Bapak-Bapak'), icon: 'solar:user-bold-duotone' },
-    { id: 'pasangan', label: getCatLabel('pasangan', 'Pasangan'), icon: 'solar:users-group-two-rounded-bold-duotone' },
-  ], [customCategories])
+  const filterOptions = useMemo(() => {
+    const list = [
+      { id: 'semua', label: 'Semua Lomba', icon: 'solar:list-bold-duotone' }
+    ]
+    customCategories.forEach(cat => {
+      list.push({
+        id: cat.id,
+        label: cat.name,
+        icon: cat.type === 'grup' ? 'solar:users-group-two-rounded-bold-duotone' : 'solar:user-bold-duotone'
+      })
+    })
+    return list
+  }, [customCategories])
 
   return (
     <main className="max-w-6xl mx-auto px-4 py-8 md:py-12">

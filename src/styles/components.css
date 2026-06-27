@@ -14,20 +14,21 @@
 
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
 }
 
 /* === Card Base === */
 .card {
   background: white;
   border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--color-abu-200);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.01);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.02);
 }
 
 /* === Badge Styles === */
@@ -78,47 +79,51 @@
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 0.9375rem;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   border: none;
   outline: none;
 }
 
+.btn:active {
+  transform: scale(0.975);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--color-merah-600) 0%, var(--color-merah-700) 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.35);
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.2);
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--color-merah-500) 0%, var(--color-merah-600) 100%);
-  box-shadow: 0 4px 16px rgba(185, 28, 28, 0.45);
+  box-shadow: 0 4px 16px rgba(185, 28, 28, 0.25);
   transform: translateY(-1px);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.975);
 }
 
 .btn-secondary {
   background: white;
   color: var(--color-merah-700);
-  border: 2px solid var(--color-merah-200);
+  border: 1px solid var(--color-merah-200);
 }
 
 .btn-secondary:hover {
   background: var(--color-merah-50);
-  border-color: var(--color-merah-400);
+  border-color: var(--color-merah-300);
 }
 
 .btn-success {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   color: white;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
 }
 
 .btn-success:hover {
-  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.45);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.25);
   transform: translateY(-1px);
 }
 
@@ -127,37 +132,37 @@
   width: 100%;
   min-height: 44px;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--color-abu-200);
+  border: 1px solid var(--color-abu-200);
   border-radius: 0.75rem;
   font-size: 1rem;
   font-family: var(--font-body);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   background: white;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--color-merah-400);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  border-color: var(--color-merah-500);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
 }
 
 .form-select {
   width: 100%;
   min-height: 44px;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--color-abu-200);
+  border: 1px solid var(--color-abu-200);
   border-radius: 0.75rem;
   font-size: 1rem;
   font-family: var(--font-body);
   background: white;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .form-select:focus {
   outline: none;
-  border-color: var(--color-merah-400);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  border-color: var(--color-merah-500);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
 }
 
 /* === Glass Card === */

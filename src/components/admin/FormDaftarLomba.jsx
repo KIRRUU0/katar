@@ -24,7 +24,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
     id: '',
     name: '',
     type: 'individu',
-    category: 'anak_4_6',
+    category: getCustomCategories()[0]?.id || '',
     status: 'belum',
     location: '',
     schedule: '',
@@ -54,7 +54,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
       id: t.id,
       name: t.name,
       type: t.type,
-      category: t.category || 'anak_4_6',
+      category: t.category || categories[0]?.id || '',
       status: t.status,
       location: t.location || '',
       schedule: t.schedule ? t.schedule.substring(0, 16) : '',
@@ -158,7 +158,11 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
       setEditingTournament(null)
       onTournamentUpdated?.()
     } catch (err) {
-      setToast({ message: `Gagal memperbarui: ${err.message}`, type: 'error' })
+      let msg = err.message
+      if (msg.includes('violates check constraint "tournaments_category_check"')) {
+        msg = 'Gagal memperbarui: Batasan database aktif. Silakan jalankan perintah SQL "ALTER TABLE tournaments DROP CONSTRAINT IF EXISTS tournaments_category_check;" di dashboard Supabase SQL Editor Anda untuk mengaktifkan kategori tak terbatas.'
+      }
+      setToast({ message: msg, type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -214,6 +218,7 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                 <th className="p-3">Nama Lomba</th>
                 <th className="p-3">Tahun</th>
                 <th className="p-3">Kategori</th>
+                <th className="p-3">Umur</th>
                 <th className="p-3">Lokasi</th>
                 <th className="p-3">Status</th>
                 <th className="p-3 text-center w-28">Aksi</th>
@@ -226,8 +231,13 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                   <td className="p-3 font-semibold text-abu-900">{t.name}</td>
                   <td className="p-3 text-abu-600 font-medium">{t.year}</td>
                   <td className="p-3">
-                    <span className="capitalize text-xs font-bold text-merah-600 bg-merah-50 px-2 py-0.5 rounded-full">
-                      {t.category ? getCategoryName(t.category) : t.type}
+                    <span className={`capitalize text-xs font-bold px-2 py-0.5 rounded-full ${t.type === 'grup' ? 'text-indigo-700 bg-indigo-50 border border-indigo-200' : 'text-emerald-700 bg-emerald-50 border border-emerald-200'}`}>
+                      {t.type === 'grup' ? 'Grup' : 'Individu'}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span className="text-xs font-semibold text-abu-700">
+                      {t.category ? getCategoryName(t.category) : '-'}
                     </span>
                   </td>
                   <td className="p-3 text-abu-600">{t.location || '-'}</td>
@@ -320,16 +330,20 @@ export default function FormDaftarLomba({ tournaments, onTournamentUpdated }) {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-abu-700 mb-1">Kategori</label>
+                  <label className="block text-sm font-semibold text-abu-700 mb-1">Umur</label>
                   <select
                      className="form-select"
                      value={editForm.category}
                      onChange={(e) => handleEditChange('category', e.target.value)}
                      required
                   >
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                    {categories.length === 0 ? (
+                      <option value="">(Belum ada kategori partisipan)</option>
+                    ) : (
+                      categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

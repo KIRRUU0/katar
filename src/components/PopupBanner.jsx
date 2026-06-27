@@ -68,8 +68,16 @@ function PopupBanner() {
   useEffect(() => {
     if (!isOpen || !banner) return
 
+    // Set global flag for lightweight checks by other components
+    try {
+      window.__katar_popup_open = true
+    } catch (e) {}
     window.dispatchEvent(new Event('katar_popup_opened'))
+
     return () => {
+      try {
+        window.__katar_popup_open = false
+      } catch (e) {}
       window.dispatchEvent(new Event('katar_popup_closed'))
     }
   }, [isOpen, banner])
