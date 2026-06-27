@@ -282,9 +282,10 @@ export default function NewsDetailPage() {
           </h1>
 
           {/* Description */}
-          <p className="text-abu-600 text-sm sm:text-base leading-relaxed whitespace-pre-line md:text-lg text-justify">
-            {article.description}
-          </p>
+          <div 
+            className="text-abu-600 text-sm sm:text-base leading-relaxed md:text-lg text-justify prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: article.description }}
+          />
 
           {/* Secondary images gallery */}
           {allImages.length > 1 && (

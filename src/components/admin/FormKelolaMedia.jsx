@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
+import ReactQuill from 'react-quill-new'
+import 'react-quill-new/dist/quill.snow.css'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
 import ImageEditorModal from './ImageEditorModal'
 import { uploadImage, parseImages } from './adminUtils'
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
 
 export default function FormKelolaMedia({ onMediaAdded }) {
   const [form, setForm] = useState({
@@ -17,10 +24,11 @@ export default function FormKelolaMedia({ onMediaAdded }) {
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })
 
-  // List state
   const [mediaList, setMediaList] = useState([])
   const [fetchingList, setFetchingList] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 5
 
   // Edit states
   const [editingMedia, setEditingMedia] = useState(null)
@@ -199,6 +207,27 @@ export default function FormKelolaMedia({ onMediaAdded }) {
 
     fetchMedia()
   }, [fetchMedia])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const query = searchQuery.trim().toLowerCase()
+    const filteredList = mediaList.filter(item => {
+      if (!query) return true
+      return (
+        item.title.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        (item.date && item.date.includes(query)) ||
+        (item.year && String(item.year).includes(query))
+      )
+    })
+    const maxPage = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(maxPage)
+    }
+  }, [mediaList, searchQuery, currentPage, ITEMS_PER_PAGE])
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files)
@@ -546,11 +575,20 @@ export default function FormKelolaMedia({ onMediaAdded }) {
 
         <div>
           <label className="block text-sm font-semibold text-abu-700 mb-1">Deskripsi / Keterangan</label>
-          <textarea
-            className="form-input focus-ring min-h-[100px] py-2 text-sm"
-            placeholder="Keterangan singkat mengenai momen di dalam foto..."
+          <ReactQuill
+            theme="snow"
             value={form.description}
-            onChange={(e) => updateField('description', e.target.value)}
+            onChange={(content) => updateField('description', content)}
+            modules={{
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['clean']
+              ]
+            }}
+            placeholder="Keterangan singkat mengenai momen di dalam foto..."
           />
         </div>
 
@@ -639,6 +677,9 @@ export default function FormKelolaMedia({ onMediaAdded }) {
             )
           }
 
+          const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
+          const paginatedMedia = filteredList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+
           return (
             <div className="overflow-x-auto border border-abu-200 rounded-2xl bg-white shadow-sm scrollbar-thin">
               <table className="w-full text-left text-sm border-collapse">
@@ -653,12 +694,13 @@ export default function FormKelolaMedia({ onMediaAdded }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-abu-150 align-middle">
-                  {filteredList.map((item, idx) => {
+                  {paginatedMedia.map((item, idx) => {
+                    const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx
                     const images = parseImages(item.image_url)
                     const primaryImg = images[0] || ''
                     return (
                       <tr key={item.id} className="hover:bg-abu-50/40 transition-colors group">
-                        <td className="px-4 py-3 text-center font-semibold text-abu-400 text-xs">{idx + 1}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-abu-400 text-xs">{globalIdx + 1}</td>
                         <td className="px-4 py-3">
                           <div className="relative w-14 h-10 rounded-lg overflow-hidden border border-abu-200 bg-abu-50 shadow-sm group-hover:border-abu-300 transition-colors flex-shrink-0">
                             {primaryImg ? (
@@ -694,8 +736,8 @@ export default function FormKelolaMedia({ onMediaAdded }) {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-xs text-abu-500 line-clamp-2 leading-relaxed max-w-xs md:max-w-md whitespace-normal" title={item.description || '-'}>
-                            {item.description || '-'}
+                          <p className="text-xs text-abu-500 line-clamp-2 leading-relaxed max-w-xs md:max-w-md whitespace-normal" title={stripHtml(item.description) || '-'}>
+                            {stripHtml(item.description) || '-'}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -721,6 +763,42 @@ export default function FormKelolaMedia({ onMediaAdded }) {
                   })}
                 </tbody>
               </table>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-3 border-t border-abu-200 bg-abu-50/50 rounded-b-2xl">
+                  <span className="text-xs text-abu-500 font-medium">
+                    Menampilkan {Math.min(filteredList.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)} - {Math.min(filteredList.length, currentPage * ITEMS_PER_PAGE)} dari {filteredList.length} foto
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className="p-1 rounded-lg border border-abu-250 bg-white hover:bg-abu-50 text-abu-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-ring min-w-[32px] min-h-[32px] inline-flex items-center justify-center transition-all"
+                    >
+                      ←
+                    </button>
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg border focus-ring min-w-[32px] min-h-[32px] cursor-pointer transition-all ${
+                          currentPage === i + 1
+                            ? 'border-merah-600 bg-merah-600 text-white shadow-sm'
+                            : 'border-abu-250 bg-white hover:bg-abu-50 text-abu-700'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      className="p-1 rounded-lg border border-abu-250 bg-white hover:bg-abu-50 text-abu-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-ring min-w-[32px] min-h-[32px] inline-flex items-center justify-center transition-all"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )
         })()}
@@ -933,10 +1011,20 @@ export default function FormKelolaMedia({ onMediaAdded }) {
 
               <div>
                 <label className="block text-sm font-semibold text-abu-700 mb-1">Deskripsi / Keterangan</label>
-                <textarea
-                  className="form-input focus-ring min-h-[100px] py-2 text-sm"
+                <ReactQuill
+                  theme="snow"
                   value={editForm.description}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(content) => setEditForm(prev => ({ ...prev, description: content }))}
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ 'color': [] }, { 'background': [] }],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      ['clean']
+                    ]
+                  }}
+                  placeholder="Keterangan singkat mengenai momen di dalam foto..."
                 />
               </div>
 

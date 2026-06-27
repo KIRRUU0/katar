@@ -202,3 +202,27 @@
     padding: 2rem;
   }
 }
+
+/* === React Quill Custom Premium Theme === */
+.ql-container.ql-snow {
+  border: 1px solid var(--color-abu-200) !important;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+  font-family: var(--font-body) !important;
+  font-size: 0.9375rem !important;
+  background: white;
+}
+.ql-toolbar.ql-snow {
+  border: 1px solid var(--color-abu-200) !important;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+  background: var(--color-abu-50);
+  font-family: var(--font-body) !important;
+}
+.ql-editor {
+  min-height: 200px;
+}
+.ql-editor.ql-blank::before {
+  font-style: normal !important;
+  color: var(--color-abu-400) !important;
+}

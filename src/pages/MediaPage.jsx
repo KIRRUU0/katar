@@ -4,6 +4,11 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { parseImages } from '../components/admin/adminUtils'
 import { formatDate } from '../lib/formatUtils'
 
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
+
 export default function MediaPage() {
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -378,7 +383,7 @@ export default function MediaPage() {
                                       </h4>
                                       {item.description && (
                                         <p className="text-xs text-abu-500 mt-1 leading-relaxed line-clamp-2">
-                                          {item.description}
+                                          {stripHtml(item.description)}
                                         </p>
                                       )}
                                     </div>
@@ -541,9 +546,10 @@ export default function MediaPage() {
                 {/* 2. Description Area (White Background) */}
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-grow bg-white">
                   {activeItem.description ? (
-                    <p className="text-sm md:text-base text-abu-800 leading-relaxed whitespace-pre-wrap text-justify">
-                      {activeItem.description}
-                    </p>
+                    <div 
+                      className="text-sm md:text-base text-abu-800 leading-relaxed text-justify prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: activeItem.description }}
+                    />
                   ) : (
                     <p className="text-sm text-abu-400 italic">
                       Tidak ada deskripsi tambahan untuk foto ini.

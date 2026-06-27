@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
+import ReactQuill from 'react-quill-new'
+import 'react-quill-new/dist/quill.snow.css'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
 import ImageEditorModal from './ImageEditorModal'
@@ -16,9 +18,20 @@ export default function FormKelolaBerita({ onNewsAdded }) {
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })
   
-  // List state
   const [newsList, setNewsList] = useState([])
   const [fetchingList, setFetchingList] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 5
+
+  const totalPages = Math.ceil(newsList.length / ITEMS_PER_PAGE)
+  const paginatedNews = newsList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+
+  useEffect(() => {
+    const maxPage = Math.ceil(newsList.length / ITEMS_PER_PAGE)
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(maxPage)
+    }
+  }, [newsList, currentPage])
 
   // Edit states
   const [editingNews, setEditingNews] = useState(null)
@@ -160,7 +173,10 @@ export default function FormKelolaBerita({ onNewsAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.title.trim() || !form.imageUrl.trim()) return
+    if (!form.title.trim() || !form.description.trim() || !form.imageUrl.trim()) {
+      setToast({ message: 'Semua field (Judul, Deskripsi, Gambar) wajib diisi!', type: 'error' })
+      return
+    }
     if (!window.confirm("Yakin ingin menyimpan data ini?")) return;
     setLoading(true)
     setToast({ message: '', type: '' })
@@ -259,7 +275,10 @@ export default function FormKelolaBerita({ onNewsAdded }) {
 
   const handleUpdate = async (e) => {
     e.preventDefault()
-    if (!editForm.title.trim() || !editForm.imageUrl.trim()) return
+    if (!editForm.title.trim() || !editForm.description.trim() || !editForm.imageUrl.trim()) {
+      setToast({ message: 'Semua field (Judul, Deskripsi, Gambar) wajib diisi!', type: 'error' })
+      return
+    }
     if (!window.confirm("Yakin ingin memperbarui data ini?")) return;
     setLoading(true)
     try {
@@ -480,12 +499,20 @@ export default function FormKelolaBerita({ onNewsAdded }) {
 
         <div>
           <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi Kegiatan</label>
-          <textarea
-            required
-            className="form-input focus-ring min-h-[250px] py-3 text-sm resize-y leading-relaxed"
-            placeholder="Tuliskan berita lengkap..."
+          <ReactQuill
+            theme="snow"
             value={form.description}
-            onChange={(e) => updateField('description', e.target.value)}
+            onChange={(content) => updateField('description', content)}
+            modules={{
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['clean']
+              ]
+            }}
+            placeholder="Tuliskan berita lengkap..."
           />
         </div>
 
@@ -518,49 +545,88 @@ export default function FormKelolaBerita({ onNewsAdded }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-abu-200">
-                {newsList.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-abu-50/50 transition-colors">
-                    <td className="p-3 text-center font-medium text-abu-500">{idx + 1}</td>
-                    <td className="p-3">
-                      <div className="w-14 h-10 rounded overflow-hidden border border-abu-200">
-                        <img
-                          src={parseImages(item.image_url)[0]}
-                          alt=""
-                          className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
-                          referrerPolicy="no-referrer"
-                          onClick={() => {
-                            const imgUrl = parseImages(item.image_url)[0]
-                            if (imgUrl) setLightboxUrl(imgUrl)
-                          }}
-                        />
-                      </div>
-                    </td>
-                    <td className="p-3 font-semibold text-abu-900">{item.title}</td>
-                    <td className="p-3 text-abu-500">
-                      {item.date ? new Date(item.date).toLocaleDateString('id-ID') : (item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-')}
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handleEditClick(item)}
-                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors focus-ring min-w-[36px] min-h-[36px] inline-flex items-center justify-center cursor-pointer"
-                          title="Edit"
-                        >
-                          <Icon icon="solar:pen-bold" className="w-4.5 h-4.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item)}
-                          className="p-1.5 text-merah-600 hover:text-merah-800 hover:bg-merah-50 rounded-lg transition-colors focus-ring min-w-[36px] min-h-[36px] inline-flex items-center justify-center cursor-pointer"
-                          title="Hapus"
-                        >
-                          <Icon icon="solar:trash-bin-trash-bold" className="w-4.5 h-4.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {paginatedNews.map((item, idx) => {
+                  const globalIdx = (currentPage - 1) * ITEMS_PER_PAGE + idx
+                  return (
+                    <tr key={item.id} className="hover:bg-abu-50/50 transition-colors">
+                      <td className="p-3 text-center font-medium text-abu-500">{globalIdx + 1}</td>
+                      <td className="p-3">
+                        <div className="w-14 h-10 rounded overflow-hidden border border-abu-200">
+                          <img
+                            src={parseImages(item.image_url)[0]}
+                            alt=""
+                            className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                            referrerPolicy="no-referrer"
+                            onClick={() => {
+                              const imgUrl = parseImages(item.image_url)[0]
+                              if (imgUrl) setLightboxUrl(imgUrl)
+                            }}
+                          />
+                        </div>
+                      </td>
+                      <td className="p-3 font-semibold text-abu-900">{item.title}</td>
+                      <td className="p-3 text-abu-500">
+                        {item.date ? new Date(item.date).toLocaleDateString('id-ID') : (item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-')}
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors focus-ring min-w-[36px] min-h-[36px] inline-flex items-center justify-center cursor-pointer"
+                            title="Edit"
+                          >
+                            <Icon icon="solar:pen-bold" className="w-4.5 h-4.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            className="p-1.5 text-merah-600 hover:text-merah-800 hover:bg-merah-50 rounded-lg transition-colors focus-ring min-w-[36px] min-h-[36px] inline-flex items-center justify-center cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Icon icon="solar:trash-bin-trash-bold" className="w-4.5 h-4.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between p-3 border-t border-abu-200 bg-abu-50/50 rounded-b-2xl">
+                <span className="text-xs text-abu-500 font-medium">
+                  Menampilkan {Math.min(newsList.length, (currentPage - 1) * ITEMS_PER_PAGE + 1)} - {Math.min(newsList.length, currentPage * ITEMS_PER_PAGE)} dari {newsList.length} berita
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="p-1 rounded-lg border border-abu-250 bg-white hover:bg-abu-50 text-abu-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-ring min-w-[32px] min-h-[32px] inline-flex items-center justify-center transition-all"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: totalPages }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg border focus-ring min-w-[32px] min-h-[32px] cursor-pointer transition-all ${
+                        currentPage === i + 1
+                          ? 'border-merah-600 bg-merah-600 text-white shadow-sm'
+                          : 'border-abu-250 bg-white hover:bg-abu-50 text-abu-700'
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="p-1 rounded-lg border border-abu-250 bg-white hover:bg-abu-50 text-abu-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-ring min-w-[32px] min-h-[32px] inline-flex items-center justify-center transition-all"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -754,11 +820,20 @@ export default function FormKelolaBerita({ onNewsAdded }) {
 
               <div>
                 <label className="block text-sm font-semibold text-abu-700 mb-1">Isi Berita / Deskripsi</label>
-                <textarea
-                  required
-                  className="form-input focus-ring min-h-[250px] py-3 text-sm resize-y leading-relaxed"
+                <ReactQuill
+                  theme="snow"
                   value={editForm.description}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(content) => setEditForm(prev => ({ ...prev, description: content }))}
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ 'color': [] }, { 'background': [] }],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      ['clean']
+                    ]
+                  }}
+                  placeholder="Tuliskan berita lengkap..."
                 />
               </div>
 

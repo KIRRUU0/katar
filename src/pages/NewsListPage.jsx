@@ -6,6 +6,11 @@ import { generateSlug } from '../lib/slug'
 import { parseImages } from '../components/admin/adminUtils'
 import { formatDate } from '../lib/formatUtils'
 
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
+
 export default function NewsListPage() {
   const [news, setNews] = useState([])
   const [loading, setLoading] = useState(true)
@@ -127,7 +132,7 @@ export default function NewsListPage() {
                   {item.title}
                 </h3>
                 <p className="text-sm text-abu-500 mb-4 line-clamp-3 leading-relaxed flex-grow">
-                  {item.description}
+                  {stripHtml(item.description)}
                 </p>
                 {(item.date || item.created_at) && (
                   <time className="text-xs text-abu-400 font-semibold mt-auto pt-2 block border-t border-abu-100">
