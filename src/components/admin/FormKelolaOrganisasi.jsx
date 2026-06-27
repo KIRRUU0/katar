@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
@@ -5,7 +6,8 @@ import Toast from './Toast'
 import { uploadImage } from './adminUtils'
 
 export default function FormKelolaOrganisasi() {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(true)
   const [toast, setToast] = useState({ message: '', type: '' })
   const [orgYear, setOrgYear] = useState(2026)
   
@@ -32,7 +34,6 @@ export default function FormKelolaOrganisasi() {
   const [editMemberName, setEditMemberName] = useState('')
 
   const fetchOrgData = useCallback(async () => {
-    setLoading(true)
     try {
       let data = null
       let isFetched = false
@@ -117,12 +118,15 @@ export default function FormKelolaOrganisasi() {
       console.error('Error fetching organization data:', err)
     } finally {
       setLoading(false)
+      setFetching(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchOrgData()
-  }, [fetchOrgData])
+    if (fetching) {
+      fetchOrgData()
+    }
+  }, [fetchOrgData, fetching])
 
   const handleImageUpload = async (e, roleKey) => {
     const file = e.target.files[0]

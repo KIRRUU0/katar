@@ -73,7 +73,6 @@ export default function NewsDetailPage() {
     async function fetchArticle() {
       setLoading(true)
       let found = null
-      let others = []
 
       const localData = localStorage.getItem('katar_news_articles')
       let localNews = []
@@ -157,7 +156,7 @@ export default function NewsDetailPage() {
         ...supabaseNews.filter((item) => String(item.id) !== String(targetId))
       ]
 
-      others = combinedOthers.slice(0, 3)
+      const others = combinedOthers.slice(0, 3)
 
       setArticle(found || null)
       setOtherNews(others)

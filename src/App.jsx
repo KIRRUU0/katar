@@ -103,15 +103,22 @@ const BackToTopButton = memo(function BackToTopButton() {
  */
 function PageTransition({ children }) {
   const location = useLocation()
-  const [visible, setVisible] = useState(false)
+  const [prevPath, setPrevPath] = useState(location.pathname)
+  const [visible, setVisible] = useState(true)
+
+  if (location.pathname !== prevPath) {
+    setPrevPath(location.pathname)
+    setVisible(false)
+  }
 
   useEffect(() => {
-    setVisible(false)
-    const raf = requestAnimationFrame(() => {
-      setVisible(true)
-    })
-    return () => cancelAnimationFrame(raf)
-  }, [location.pathname])
+    if (!visible) {
+      const raf = requestAnimationFrame(() => {
+        setVisible(true)
+      })
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [visible])
 
   return (
     <div
@@ -136,7 +143,7 @@ export default function App() {
   // Record page view on mount (once per session)
   useEffect(() => {
     import('./lib/analytics').then(({ recordPageView }) => {
-      try { recordPageView() } catch (e) {}
+      try { recordPageView() } catch { /* ignore */ }
     }).catch(() => {})
   }, [])
 

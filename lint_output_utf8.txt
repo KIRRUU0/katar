@@ -1,0 +1,549 @@
+﻿
+C:\Project\Katar\inspect_constraints.js
+  22:11  error  'data' is assigned a value but never used   no-unused-vars
+  22:17  error  'error' is assigned a value but never used  no-unused-vars
+
+C:\Project\Katar\scratch\patch_admin.js
+   1:12   error  'require' is not defined          no-undef
+  18:38   error  Unnecessary escape character: \"  no-useless-escape
+  18:150  error  Unnecessary escape character: \"  no-useless-escape
+  23:70   error  Unnecessary escape character: \"  no-useless-escape
+  23:85   error  Unnecessary escape character: \"  no-useless-escape
+  26:70   error  Unnecessary escape character: \"  no-useless-escape
+  26:85   error  Unnecessary escape character: \"  no-useless-escape
+
+C:\Project\Katar\scratch\test_category_settings_crud.js
+  20:17  error  'authData' is assigned a value but never used  no-unused-vars
+
+C:\Project\Katar\scratch\test_supa.js
+  1:8   error  'fs' is defined but never used                          no-unused-vars
+  2:10  error  'createClient' is defined but never used                no-unused-vars
+  5:7   error  'SUPABASE_ANON_KEY' is assigned a value but never used  no-unused-vars
+
+C:\Project\Katar\src\App.jsx
+  109:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  107 |
+  108 |   useEffect(() => {
+> 109 |     setVisible(false)
+      |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  110 |     const raf = requestAnimationFrame(() => {
+  111 |       setVisible(true)
+  112 |     })  react-hooks/set-state-in-effect
+  139:39  error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+  139:42  error  Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-empty
+
+C:\Project\Katar\src\components\CountdownTimer.jsx
+   28:6   warning  React Hook useCallback has a missing dependency: 'targetDate'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   79:6   warning  React Hook useEffect has a missing dependency: 'digitRefs'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+   97:5   error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   95 |   const digits = useMemo(() => [
+   96 |     { key: 'days', label: 'Hari', value: pad(timeLeft.days, 3), ref: digitRefs.days },
+>  97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+   98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+   99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+  100 |   ], [timeLeft])  react-hooks/refs
+   97:68  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   95 |   const digits = useMemo(() => [
+   96 |     { key: 'days', label: 'Hari', value: pad(timeLeft.days, 3), ref: digitRefs.days },
+>  97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+      |                                                                    ^^^^^^^^^^^^^^^ Cannot access ref value during render
+   98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+   99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+  100 |   ], [timeLeft])    react-hooks/refs
+   98:5   error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   96 |     { key: 'days', label: 'Hari', value: pad(timeLeft.days, 3), ref: digitRefs.days },
+   97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+>  98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+   99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+  100 |   ], [timeLeft])
+  101 |                           react-hooks/refs
+   98:74  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   96 |     { key: 'days', label: 'Hari', value: pad(timeLeft.days, 3), ref: digitRefs.days },
+   97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+>  98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+      |                                                                          ^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+   99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+  100 |   ], [timeLeft])
+  101 |                             react-hooks/refs
+   99:5   error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+   98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+>  99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  100 |   ], [timeLeft])
+  101 |
+  102 |   // Memoized Digit component so only changed digits re-render                                                   react-hooks/refs
+   99:74  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+   97 |     { key: 'hours', label: 'Jam', value: pad(timeLeft.hours), ref: digitRefs.hours },
+   98 |     { key: 'minutes', label: 'Menit', value: pad(timeLeft.minutes), ref: digitRefs.minutes },
+>  99 |     { key: 'seconds', label: 'Detik', value: pad(timeLeft.seconds), ref: digitRefs.seconds },
+      |                                                                          ^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  100 |   ], [timeLeft])
+  101 |
+  102 |   // Memoized Digit component so only changed digits re-render                                                     react-hooks/refs
+  100:6   warning  React Hook useMemo has missing dependencies: 'digitRefs.days', 'digitRefs.hours', 'digitRefs.minutes', and 'digitRefs.seconds'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+  147:12  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  145 |         /* Digit boxes row */
+  146 |         <div className="flex items-center justify-center gap-3 md:gap-5">
+> 147 |           {digits.map((digit) => (
+      |            ^^^^^^ Cannot access ref value during render
+  148 |             <Digit key={digit.key} value={digit.value} label={digit.label} innerRef={digit.ref} />
+  149 |           ))}
+  150 |         </div>                                                                                                                                                                                                                     react-hooks/refs
+  147:12  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+  145 |         /* Digit boxes row */
+  146 |         <div className="flex items-center justify-center gap-3 md:gap-5">
+> 147 |           {digits.map((digit) => (
+      |            ^^^^^^^^^^ Cannot access ref value during render
+  148 |             <Digit key={digit.key} value={digit.value} label={digit.label} innerRef={digit.ref} />
+  149 |           ))}
+  150 |         </div>                                                                                                                                                                                                                 react-hooks/refs
+
+C:\Project\Katar\src\components\LazyImage.jsx
+  27:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  25 |
+  26 |     // Fallback: mark visible immediately
+> 27 |     setVisible(true)
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |   }, [src, forceVisible])
+  29 |
+  30 |   return (  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\LiveTicker.jsx
+   30:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  28 |           const activeMsgs = parsed.filter(t => t.is_active).map(t => t.message)
+  29 |           if (activeMsgs.length > 0) {
+> 30 |             setAnnouncements(activeMsgs)
+     |             ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  31 |             return
+  32 |           }
+  33 |         } catch (e) {  react-hooks/set-state-in-effect
+  112:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  110 |     try {
+  111 |       const initial = Boolean(window.__katar_popup_open)
+> 112 |       setIsPopupOpen(initial)
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  113 |     } catch (e) {
+  114 |       setIsPopupOpen(false)
+  115 |     }                                                                    react-hooks/set-state-in-effect
+  113:14  error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+
+C:\Project\Katar\src\components\MedalTable.jsx
+  32:9  error  'getCatLabel' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+  72:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  70 |   useEffect(() => {
+  71 |     if (selectedYear === null) {
+> 72 |       setMedals([])
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  73 |       setLoading(false)
+  74 |       return
+  75 |     }  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\MediaPreview.jsx
+    4:10  error  'supabase' is defined but never used  no-unused-vars
+  154:55  error  Empty block statement                 no-empty
+  156:14  error  'e' is defined but never used         no-unused-vars
+
+C:\Project\Katar\src\components\Navbar.jsx
+  30:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  28 |   // Close mobile menu on route change
+  29 |   useEffect(() => {
+> 30 |     setMenuOpen(false)
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  31 |   }, [location.pathname])
+  32 |
+  33 |   /** Check if a link is active */  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\NewsCarousel.jsx
+  4:10  error  'supabase' is defined but never used  no-unused-vars
+
+C:\Project\Katar\src\components\PopupBanner.jsx
+  74:14  error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+  74:17  error  Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-empty
+  80:16  error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+  80:19  error  Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-empty
+  93:7   error  Error: Cannot access variable before it is declared
+
+`handleClose` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  91 |
+  92 |     const closeTimeout = setTimeout(() => {
+> 93 |       handleClose()
+     |       ^^^^^^^^^^^ `handleClose` accessed before it is declared
+  94 |     }, 8000)
+  95 |
+  96 |     return () => {
+
+  100 |   }, [isOpen, banner])
+  101 |
+> 102 |   const handleClose = () => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 103 |     setAnimate(false)
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 104 |     // Wait for fade-out transition before unmounting
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 105 |     setTimeout(() => {
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 106 |       setIsOpen(false)
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 107 |       sessionStorage.setItem('katar_popup_banner_shown', 'true')
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 108 |     }, 300)
+      | ^^^^^^^^^^^^^^^^^^^^^
+> 109 |   }
+      | ^^^^ `handleClose` is declared here
+  110 |
+  111 |   const handleBannerClick = () => {
+  112 |     if (!banner || !banner.link_url) return  react-hooks/immutability
+
+C:\Project\Katar\src\components\admin\FormBuatLomba.jsx
+  8:10  error  'years' is assigned a value but never used  no-unused-vars
+
+C:\Project\Katar\src\components\admin\FormEditKategori.jsx
+  55:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  53 |
+  54 |   useEffect(() => {
+> 55 |     loadCategories()
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  56 |   }, [loadCategories])
+  57 |
+  58 |   const showToast = (message, type = 'success') => {  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\FormInputPeserta.jsx
+  152:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  150 |   // Reset and Fetch when switching tournaments
+  151 |   useEffect(() => {
+> 152 |     setParticipantName('')
+      |     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  153 |     setParticipantAge('')
+  154 |     setGroupName('')
+  155 |     setMembers([''])  react-hooks/set-state-in-effect
+  161:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  159 |
+  160 |   useEffect(() => {
+> 161 |     fetchAllData()
+      |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  162 |   }, [fetchAllData])
+  163 |
+  164 |   // ΓöÇΓöÇ Individu Add ΓöÇΓöÇ                                                                                       react-hooks/set-state-in-effect
+  179:25  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  177 |         const allParts = JSON.parse(localStorage.getItem('katar_participants') || '[]')
+  178 |         const newPart = {
+> 179 |           id: 'part-' + Date.now(),
+      |                         ^^^^^^^^^^ Cannot call impure function
+  180 |           tournament_id: selectedId,
+  181 |           name: participantName.trim(),
+  182 |           origin_block: participantAge.toString(), // Age stored as string in origin_block                                                                                                                                                                                                                                      react-hooks/purity
+
+C:\Project\Katar\src\components\admin\FormKelolaBanner.jsx
+  52:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  50 |
+  51 |   useEffect(() => {
+> 52 |     fetchBanners()
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  53 |   }, [fetchBanners])
+  54 |
+  55 |   const showToast = (message, type = 'success') => {  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\FormKelolaBerita.jsx
+   32:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  30 |     const maxPage = Math.ceil(newsList.length / ITEMS_PER_PAGE)
+  31 |     if (currentPage > maxPage && maxPage > 0) {
+> 32 |       setCurrentPage(maxPage)
+     |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  33 |     }
+  34 |   }, [newsList, currentPage])
+  35 |  react-hooks/set-state-in-effect
+  144:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  142 |
+  143 |   useEffect(() => {
+> 144 |     fetchNews()
+      |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  145 |   }, [fetchNews])
+  146 |
+  147 |   const handleFileChange = async (e) => {                                                                                    react-hooks/set-state-in-effect
+  169:40  error  'title' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+  169:47  error  'description' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        no-unused-vars
+  169:60  error  'imageUrl' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+  169:70  error  'date' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+  379:21  error  'matches' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+  700:27  error  'matches' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+
+C:\Project\Katar\src\components\admin\FormKelolaMedia.jsx
+  146:20  error  'e' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+  208:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  206 |     }
+  207 |
+> 208 |     fetchMedia()
+      |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  209 |   }, [fetchMedia])
+  210 |
+  211 |   useEffect(() => {                                                                                                                                                              react-hooks/set-state-in-effect
+  212:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  210 |
+  211 |   useEffect(() => {
+> 212 |     setCurrentPage(1)
+      |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  213 |   }, [searchQuery])
+  214 |
+  215 |   useEffect(() => {                                                                                                                                      react-hooks/set-state-in-effect
+  228:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  226 |     const maxPage = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
+  227 |     if (currentPage > maxPage && maxPage > 0) {
+> 228 |       setCurrentPage(maxPage)
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  229 |     }
+  230 |   }, [mediaList, searchQuery, currentPage, ITEMS_PER_PAGE])
+  231 |  react-hooks/set-state-in-effect
+  455:21  error  'matches' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+  891:27  error  'matches' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+
+C:\Project\Katar\src\components\admin\FormKelolaOrganisasi.jsx
+  124:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  122 |
+  123 |   useEffect(() => {
+> 124 |     fetchOrgData()
+      |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  125 |   }, [fetchOrgData])
+  126 |
+  127 |   const handleImageUpload = async (e, roleKey) => {  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\FormKelolaTicker.jsx
+  50:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  48 |
+  49 |   useEffect(() => {
+> 50 |     fetchTickerData()
+     |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  51 |   }, [fetchTickerData])
+  52 |
+  53 |   const showToast = (message, type = 'success') => {  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\FormKunciPemenang.jsx
+  19:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  17 |   useEffect(() => {
+  18 |     if (!selectedId) {
+> 19 |       setEntries([])
+     |       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  20 |       setWinners({ gold: '', silver: '', bronze: '' })
+  21 |       return
+  22 |     }  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\ImageEditorModal.jsx
+  45:10  error  'rotation' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+  58:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  56 |   // Reset values ketika URL gambar berubah
+  57 |   useEffect(() => {
+> 58 |     setImgSrc(imageUrl)
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  59 |     setRotation(0)
+  60 |     setCropLeft(0)
+  61 |     setCropRight(0)  react-hooks/set-state-in-effect
+
+C:\Project\Katar\src\components\admin\adminUtils.js
+  65:13  error  'data' is assigned a value but never used  no-unused-vars
+
+C:\Project\Katar\src\context\AuthContext.jsx
+  73:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Project\Katar\src\lib\slug.js
+  10:23  error  Unnecessary escape character: \-  no-useless-escape
+  11:15  error  Unnecessary escape character: \-  no-useless-escape
+  11:17  error  Unnecessary escape character: \-  no-useless-escape
+
+C:\Project\Katar\src\pages\AdminPage.jsx
+  107:5   error  The value assigned to 'parsedTourneys' is not used in subsequent statements                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-useless-assignment
+  482:10  error  'statsLoading' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-unused-vars
+  653:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  651 |   useEffect(() => {
+  652 |     if (user) {
+> 653 |       fetchTournaments()
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  654 |       fetchDashboardStats()
+  655 |       // Run background one-time sync of news images to media table
+  656 |       syncAllExistingNewsImages().then(() => {  react-hooks/set-state-in-effect
+  771:17  error  'popularTournaments' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+  772:17  error  'yearlyDistribution' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+
+C:\Project\Katar\src\pages\HomePage.jsx
+  55:43  error  'e' is defined but never used  no-unused-vars
+  55:46  error  Empty block statement          no-empty
+
+C:\Project\Katar\src\pages\LeaguePage.jsx
+   38:9   error  'getCatLabel' is assigned a value but never used          no-unused-vars
+   42:9   error  'handleRegisterClick' is assigned a value but never used  no-unused-vars
+  391:16  error  'err' is defined but never used                           no-unused-vars
+
+C:\Project\Katar\src\pages\NewsDetailPage.jsx
+  76:11  error  The value assigned to 'others' is not used in subsequent statements  no-useless-assignment
+
+Γ£û 84 problems (81 errors, 3 warnings)
+

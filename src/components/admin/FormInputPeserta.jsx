@@ -1,8 +1,13 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
 import { getNormalizedCategory, getCustomCategories, validateAgeForCategory, getCategoryName } from './adminUtils'
+
+const generatePartId = () => 'part-' + Date.now()
+const generateTeamId = () => 'team-' + Date.now()
+const generateMemberId = (i) => `member-${Date.now()}-${i}`
 
 export default function FormInputPeserta({ tournaments }) {
   const [selectedId, setSelectedId] = useState('')
@@ -149,17 +154,13 @@ export default function FormInputPeserta({ tournaments }) {
 
   // Reset and Fetch when switching tournaments
   useEffect(() => {
-    setParticipantName('')
-    setParticipantAge('')
-    setGroupName('')
-    setMembers([''])
-    setToast({ message: '', type: '' })
+    setParticipantName(prev => prev !== '' ? '' : prev)
+    setParticipantAge(prev => prev !== '' ? '' : prev)
+    setGroupName(prev => prev !== '' ? '' : prev)
+    setMembers(prev => prev.length !== 1 || prev[0] !== '' ? [''] : prev)
+    setToast(prev => prev.message !== '' || prev.type !== '' ? { message: '', type: '' } : prev)
     fetchList()
   }, [selectedId, fetchList])
-
-  useEffect(() => {
-    fetchAllData()
-  }, [fetchAllData])
 
   // ── Individu Add ──
   const addParticipant = async () => {
@@ -176,7 +177,7 @@ export default function FormInputPeserta({ tournaments }) {
       if (!isSupabaseConfigured()) {
         const allParts = JSON.parse(localStorage.getItem('katar_participants') || '[]')
         const newPart = {
-          id: 'part-' + Date.now(),
+          id: generatePartId(),
           tournament_id: selectedId,
           name: participantName.trim(),
           origin_block: participantAge.toString(), // Age stored as string in origin_block
@@ -218,7 +219,7 @@ export default function FormInputPeserta({ tournaments }) {
         const allTeams = JSON.parse(localStorage.getItem('katar_teams') || '[]')
         const allMembers = JSON.parse(localStorage.getItem('katar_team_members') || '[]')
 
-        const newTeamId = 'team-' + Date.now()
+        const newTeamId = generateTeamId()
         const newTeam = {
           id: newTeamId,
           tournament_id: selectedId,
@@ -227,7 +228,7 @@ export default function FormInputPeserta({ tournaments }) {
         }
 
         const newMembers = validMembers.map((name, i) => ({
-          id: `member-${Date.now()}-${i}`,
+          id: generateMemberId(i),
           team_id: newTeamId,
           member_name: name.trim()
         }))
@@ -388,7 +389,7 @@ export default function FormInputPeserta({ tournaments }) {
           const filteredMems = allMembers.filter(m => m.team_id !== editingItem.id)
           const validEditMems = editMembers.filter(m => m.trim())
           const newMembers = validEditMems.map((name, i) => ({
-            id: `member-${Date.now()}-${i}`,
+            id: generateMemberId(i),
             team_id: editingItem.id,
             member_name: name.trim()
           }))

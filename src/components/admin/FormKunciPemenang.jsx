@@ -13,15 +13,19 @@ export default function FormKunciPemenang({ tournaments, onTournamentUpdated }) 
 
   const selected = tournaments.find((t) => t.id === selectedId) || null
 
-  // Fetch participants/teams when tournament changes
-  useEffect(() => {
-    if (!selectedId) {
-      setEntries([])
-      setWinners({ gold: '', silver: '', bronze: '' })
-      return
-    }
+  const [prevSelectedId, setPrevSelectedId] = useState(selectedId)
+
+  // Adjust state during render when selectedId changes
+  if (selectedId !== prevSelectedId) {
+    setPrevSelectedId(selectedId)
+    setEntries([])
     setWinners({ gold: '', silver: '', bronze: '' })
     setToast({ message: '', type: '' })
+  }
+
+  // Fetch participants/teams when tournament changes
+  useEffect(() => {
+    if (!selectedId) return
 
     const fetchEntries = async () => {
       setLoadingEntries(true)

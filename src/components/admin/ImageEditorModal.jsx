@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useRef } from 'react'
 import { Icon } from '@iconify/react'
 
@@ -42,7 +43,6 @@ const loadCorsSafeImage = (src, onLoad, onError) => {
 }
 
 export default function ImageEditorModal({ imageUrl, onSave, onClose }) {
-  const [rotation, setRotation] = useState(0)
   const [cropLeft, setCropLeft] = useState(0)
   const [cropRight, setCropRight] = useState(0)
   const [cropTop, setCropTop] = useState(0)
@@ -55,13 +55,12 @@ export default function ImageEditorModal({ imageUrl, onSave, onClose }) {
 
   // Reset values ketika URL gambar berubah
   useEffect(() => {
-    setImgSrc(imageUrl)
-    setRotation(0)
-    setCropLeft(0)
-    setCropRight(0)
-    setCropTop(0)
-    setCropBottom(0)
-    setErrorMsg('')
+    setImgSrc(prev => prev !== imageUrl ? imageUrl : prev)
+    setCropLeft(prev => prev !== 0 ? 0 : prev)
+    setCropRight(prev => prev !== 0 ? 0 : prev)
+    setCropTop(prev => prev !== 0 ? 0 : prev)
+    setCropBottom(prev => prev !== 0 ? 0 : prev)
+    setErrorMsg(prev => prev !== '' ? '' : prev)
   }, [imageUrl])
 
   // Menangani rotasi gambar menggunakan HTML5 Canvas

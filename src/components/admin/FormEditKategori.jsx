@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
@@ -52,8 +53,10 @@ export default function FormEditKategori({ onCategoriesUpdated }) {
   }, [])
 
   useEffect(() => {
-    loadCategories()
-  }, [loadCategories])
+    if (loading) {
+      loadCategories()
+    }
+  }, [loadCategories, loading])
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })

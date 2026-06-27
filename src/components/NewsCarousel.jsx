@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import LazyImage from './LazyImage'
 import { Link } from 'react-router-dom'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { generateSlug } from '../lib/slug'
 import { parseImages } from './admin/adminUtils'

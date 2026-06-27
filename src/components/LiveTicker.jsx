@@ -11,32 +11,36 @@ import { Icon } from '@iconify/react'
  * - Falls back to demo data when Supabase is not configured
  * - Red background, white text, horizontal CSS ticker animation
  */
-
-
 function LiveTicker() {
-  const [announcements, setAnnouncements] = useState([])
-  const [isPopupOpen, setIsPopupOpen] = useState(false)
-
-  // ── Fetch announcements ──────────────────────────────────
-  useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      // Check local storage fallback first
+  const [announcements, setAnnouncements] = useState(() => {
+    if (typeof window !== 'undefined') {
       const localData = localStorage.getItem('katar_announcements')
       if (localData) {
         try {
           const parsed = JSON.parse(localData)
           const activeMsgs = parsed.filter(t => t.is_active).map(t => t.message)
           if (activeMsgs.length > 0) {
-            setAnnouncements(activeMsgs)
-            return
+            return activeMsgs
           }
-        } catch (e) {
-          console.warn('Failed to parse local katar_announcements:', e)
+        } catch {
+          // ignore parsing error
         }
       }
-      setAnnouncements([])
-      return
     }
+    return []
+  })
+
+  const [isPopupOpen, setIsPopupOpen] = useState(() => {
+    try {
+      return typeof window !== 'undefined' ? Boolean(window.__katar_popup_open) : false
+    } catch {
+      return false
+    }
+  })
+
+  // ── Fetch announcements ──────────────────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
 
     // Initial fetch
     const fetchAnnouncements = async () => {
@@ -48,29 +52,12 @@ function LiveTicker() {
 
       if (!error && data) {
         setAnnouncements(data.map((row) => row.message))
-      } else {
-        // Check local storage fallback first before demo data
-        const localData = localStorage.getItem('katar_announcements')
-        if (localData) {
-          try {
-            const parsed = JSON.parse(localData)
-            const activeMsgs = parsed.filter(t => t.is_active).map(t => t.message)
-            if (activeMsgs.length > 0) {
-              setAnnouncements(activeMsgs)
-              return
-            }
-          } catch (e) {
-            console.warn('Failed to parse local katar_announcements:', e)
-          }
-        }
-        setAnnouncements([])
       }
     }
 
     fetchAnnouncements()
 
     // ── Realtime subscription ────────────────────────────
-    // create a uniquely-named channel to avoid "already subscribed" errors
     const channelName = `announcements-realtime-${Date.now()}-${Math.random().toString(36).slice(2)}`
     let channel
     try {
@@ -80,7 +67,6 @@ function LiveTicker() {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'announcements' },
           () => {
-            // Re-fetch on any change (INSERT, UPDATE, DELETE)
             fetchAnnouncements()
           }
         )
@@ -90,35 +76,25 @@ function LiveTicker() {
     }
 
     return () => {
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [])
 
   // ── Hide when popup is open (use lightweight global flag + events)
   useEffect(() => {
-    const handlePopupOpened = () => {
-      if (!isPopupOpen) setIsPopupOpen(true)
-    }
-    const handlePopupClosed = () => {
-      if (isPopupOpen) setIsPopupOpen(false)
-    }
+    const handlePopupOpened = () => setIsPopupOpen(true)
+    const handlePopupClosed = () => setIsPopupOpen(false)
 
     window.addEventListener('katar_popup_opened', handlePopupOpened)
     window.addEventListener('katar_popup_closed', handlePopupClosed)
-
-    // Initial state: prefer global flag if present, fallback to false
-    try {
-      const initial = Boolean(window.__katar_popup_open)
-      setIsPopupOpen(initial)
-    } catch (e) {
-      setIsPopupOpen(false)
-    }
 
     return () => {
       window.removeEventListener('katar_popup_opened', handlePopupOpened)
       window.removeEventListener('katar_popup_closed', handlePopupClosed)
     }
-  }, [isPopupOpen])
+  }, [])
 
   const tickerText = useMemo(() => {
     if (!announcements.length) return ''

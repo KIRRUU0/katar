@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 import Toast from './Toast'
-import { FALLBACK_YEARS, DEMO_TOURNAMENTS, getCustomCategories } from './adminUtils'
+import { DEMO_TOURNAMENTS, getCustomCategories } from './adminUtils'
 
 export default function FormBuatLomba({ onTournamentAdded }) {
-  const [years, setYears] = useState(FALLBACK_YEARS)
   const [dbYears, setDbYears] = useState([])
   const [categories, setCategories] = useState(getCustomCategories())
   const [form, setForm] = useState({
@@ -29,8 +28,6 @@ export default function FormBuatLomba({ onTournamentAdded }) {
         .select('id, year_number')
       if (data && data.length > 0) {
         setDbYears(data)
-        const sortedYears = [...data].map(y => y.year_number).sort((a, b) => b - a)
-        setYears(sortedYears)
       }
     })()
   }, [])

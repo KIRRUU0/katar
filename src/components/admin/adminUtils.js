@@ -62,7 +62,7 @@ export const uploadImage = async (file) => {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`
     const filePath = `uploads/${fileName}`
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('katar-images')
       .upload(filePath, file, {
         cacheControl: '3600',

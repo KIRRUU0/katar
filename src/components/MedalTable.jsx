@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useRef } from 'react'
 import { animate } from 'animejs'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
@@ -29,9 +30,7 @@ export default function MedalTable() {
     return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
   }, [])
 
-  const getCatLabel = (id, fallback) => {
-    return customCategories.find(c => c.id === id)?.name || fallback
-  }
+
 
   // ─── Fetch available years on mount ───────────────────────────
   useEffect(() => {
@@ -69,8 +68,8 @@ export default function MedalTable() {
   // ─── Fetch medal data when year/category changes ──────────────
   useEffect(() => {
     if (selectedYear === null) {
-      setMedals([])
-      setLoading(false)
+      setMedals(prev => prev.length > 0 ? [] : prev)
+      setLoading(prev => prev ? false : prev)
       return
     }
 

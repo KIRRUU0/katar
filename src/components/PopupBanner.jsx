@@ -71,16 +71,25 @@ function PopupBanner() {
     // Set global flag for lightweight checks by other components
     try {
       window.__katar_popup_open = true
-    } catch (e) {}
+    } catch { /* ignore */ }
     window.dispatchEvent(new Event('katar_popup_opened'))
 
     return () => {
       try {
         window.__katar_popup_open = false
-      } catch (e) {}
+      } catch { /* ignore */ }
       window.dispatchEvent(new Event('katar_popup_closed'))
     }
   }, [isOpen, banner])
+
+  const handleClose = () => {
+    setAnimate(false)
+    // Wait for fade-out transition before unmounting
+    setTimeout(() => {
+      setIsOpen(false)
+      sessionStorage.setItem('katar_popup_banner_shown', 'true')
+    }, 300)
+  }
 
   // Auto-close after 8 seconds once opened
   useEffect(() => {
@@ -98,15 +107,6 @@ function PopupBanner() {
       clearTimeout(closeTimeout)
     }
   }, [isOpen, banner])
-
-  const handleClose = () => {
-    setAnimate(false)
-    // Wait for fade-out transition before unmounting
-    setTimeout(() => {
-      setIsOpen(false)
-      sessionStorage.setItem('katar_popup_banner_shown', 'true')
-    }, 300)
-  }
 
   const handleBannerClick = () => {
     if (!banner || !banner.link_url) return

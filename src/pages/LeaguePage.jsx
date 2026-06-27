@@ -35,13 +35,7 @@ export default function LeaguePage() {
     return () => window.removeEventListener('katar_categories_updated', handleCatsUpdate)
   }, [])
 
-  const getCatLabel = (id, fallback) => {
-    return customCategories.find(c => c.id === id)?.name || fallback
-  }
 
-  const handleRegisterClick = (tournament) => {
-    setActiveRegisterTournament(tournament)
-  }
 
   const handleRegisterSuccess = (msg) => {
     setActiveRegisterTournament(null)
@@ -388,7 +382,7 @@ function RegistrationModal({ tournament, onClose, onRegisterSuccess }) {
         localRegs.push(regWithId)
         localStorage.setItem('katar_registrations', JSON.stringify(localRegs))
         onRegisterSuccess('(Demo) Pendaftaran berhasil disimpan secara lokal!')
-      } catch (err) {
+      } catch {
         setErrorMsg('Gagal menyimpan pendaftaran lokal.')
         setSubmitting(false)
       }

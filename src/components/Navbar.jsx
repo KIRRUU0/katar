@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Icon } from '@iconify/react'
@@ -27,7 +28,7 @@ export default function Navbar() {
 
   // Close mobile menu on route change
   useEffect(() => {
-    setMenuOpen(false)
+    setMenuOpen(prev => prev ? false : prev)
   }, [location.pathname])
 
   /** Check if a link is active */

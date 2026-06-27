@@ -86,13 +86,20 @@ const seedDemoParticipantData = () => {
 
   // 1. Seed Tournaments
   const currentTourneys = localStorage.getItem('katar_tournaments')
-  let parsedTourneys = []
-  if (currentTourneys) {
-    try { parsedTourneys = JSON.parse(currentTourneys) } catch { parsedTourneys = [] }
+  let needSeed = false
+  if (!currentTourneys || currentTourneys === '[]') {
+    needSeed = true
+  } else {
+    try {
+      const parsed = JSON.parse(currentTourneys)
+      if (parsed.length === 0) needSeed = true
+    } catch {
+      needSeed = true
+    }
   }
 
   // If empty or only default empty arrays, seed them
-  if (parsedTourneys.length === 0) {
+  if (needSeed) {
     const mockTourneys = [
       { id: 't-futsal-2026', name: 'Lomba Futsal RT 02', status: 'berjalan', year: 2026, created_at: new Date().toISOString() }, // Today
       { id: 't-catur-2026', name: 'Lomba Catur Warga', status: 'berjalan', year: 2026, created_at: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() }, // This week
@@ -104,7 +111,6 @@ const seedDemoParticipantData = () => {
       { id: 't-gaple-2024', name: 'Lomba Gaple Bapak-Bapak', status: 'selesai', year: 2024, created_at: new Date('2024-08-15T10:00:00Z').toISOString() } // 2 years ago
     ]
     localStorage.setItem('katar_tournaments', JSON.stringify(mockTourneys))
-    parsedTourneys = mockTourneys
   }
 
   // 2. Seed Participants (Individu)
@@ -479,7 +485,7 @@ export default function AdminPage() {
     rawVisits: [],
     participantAnalytics: { popularTournaments: [], yearlyDistribution: [] }
   })
-  const [statsLoading, setStatsLoading] = useState(false)
+  const [fetchingData, setFetchingData] = useState(true)
 
   /**
    * Fetch active tournaments (status != 'selesai')
@@ -519,7 +525,6 @@ export default function AdminPage() {
    * Fetch summary statistics for dashboard Overview tab
    */
   const fetchDashboardStats = useCallback(async () => {
-    setStatsLoading(true)
     try {
       let views = []
 
@@ -643,22 +648,25 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Error fetching dashboard stats:', err)
     } finally {
-      setStatsLoading(false)
+      // no-op
     }
   }, [])
 
   // Fetch tournaments and stats when user is authenticated
   useEffect(() => {
-    if (user) {
-      fetchTournaments()
-      fetchDashboardStats()
-      // Run background one-time sync of news images to media table
-      syncAllExistingNewsImages().then(() => {
+    if (user && fetchingData) {
+      const timer = setTimeout(async () => {
+        await fetchTournaments()
+        await fetchDashboardStats()
+        // Run background one-time sync of news images to media table
+        await syncAllExistingNewsImages()
         // Re-fetch stats after sync completes to update counts
-        fetchDashboardStats()
-      })
+        await fetchDashboardStats()
+        setFetchingData(false)
+      }, 0)
+      return () => clearTimeout(timer)
     }
-  }, [user, fetchTournaments, fetchDashboardStats])
+  }, [user, fetchTournaments, fetchDashboardStats, fetchingData])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -768,8 +776,7 @@ export default function AdminPage() {
         {activeTab === 'overview' && (() => {
           const trends = calculateVisitorTrends(stats.rawVisits || [], visitorTrendInterval)
           const maxVal = Math.max(...trends.map(t => t.count), 1)
-          const popularTournaments = stats.participantAnalytics?.popularTournaments || []
-          const yearlyDistribution = stats.participantAnalytics?.yearlyDistribution || []
+          // unused analytics variables removed
 
           // Generate SVG coordinates
           const svgWidth = 500

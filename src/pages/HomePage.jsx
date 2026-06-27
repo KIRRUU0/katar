@@ -52,7 +52,7 @@ export default function HomePage() {
 
     return () => {
       mounted = false
-      try { localScope?.revert() } catch (e) {}
+      try { localScope?.revert() } catch { /* ignore */ }
     }
   }, [])
 

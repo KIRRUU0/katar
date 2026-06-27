@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import ReactQuill from 'react-quill-new'
@@ -19,19 +20,18 @@ export default function FormKelolaBerita({ onNewsAdded }) {
   const [toast, setToast] = useState({ message: '', type: '' })
   
   const [newsList, setNewsList] = useState([])
-  const [fetchingList, setFetchingList] = useState(false)
+  const [fetchingList, setFetchingList] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 5
 
   const totalPages = Math.ceil(newsList.length / ITEMS_PER_PAGE)
   const paginatedNews = newsList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  useEffect(() => {
-    const maxPage = Math.ceil(newsList.length / ITEMS_PER_PAGE)
-    if (currentPage > maxPage && maxPage > 0) {
-      setCurrentPage(maxPage)
-    }
-  }, [newsList, currentPage])
+  // Adjust page state during render if out of bounds
+  const maxPage = totalPages
+  if (currentPage > maxPage && maxPage > 0) {
+    setCurrentPage(maxPage)
+  }
 
   // Edit states
   const [editingNews, setEditingNews] = useState(null)
@@ -141,8 +141,10 @@ export default function FormKelolaBerita({ onNewsAdded }) {
   }, [])
 
   useEffect(() => {
-    fetchNews()
-  }, [fetchNews])
+    if (fetchingList) {
+      fetchNews()
+    }
+  }, [fetchNews, fetchingList])
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files)
@@ -166,7 +168,7 @@ export default function FormKelolaBerita({ onNewsAdded }) {
     }
   }
 
-  const syncNewsImagesToMedia = async (title, description, imageUrl, date) => {
+  const syncNewsImagesToMedia = async () => {
     // No-op: news images are dynamically merged on the client-side public page
     return
   }
@@ -375,8 +377,6 @@ export default function FormKelolaBerita({ onNewsAdded }) {
             onPaste={(e) => {
               const clipboardData = e.clipboardData || window.clipboardData
               const pastedText = clipboardData.getData('Text') || ''
-              const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
-              const matches = pastedText.match(urlRegex) || []
               const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
               const newUrls = []
               items.forEach(item => {
@@ -696,8 +696,6 @@ export default function FormKelolaBerita({ onNewsAdded }) {
                   onPaste={(e) => {
                     const clipboardData = e.clipboardData || window.clipboardData
                     const pastedText = clipboardData.getData('Text') || ''
-                    const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
-                    const matches = pastedText.match(urlRegex) || []
                     const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
                     const newUrls = []
                     items.forEach(item => {

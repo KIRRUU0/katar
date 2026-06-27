@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LazyImage from './LazyImage.jsx'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { parseImages } from './admin/adminUtils'
 
@@ -151,9 +151,9 @@ function MediaPreview() {
       link.onload = () => {}
       document.head.appendChild(link)
       return () => {
-        try { document.head.removeChild(link) } catch {}
+        try { document.head.removeChild(link) } catch { /* ignore */ }
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, [photos])

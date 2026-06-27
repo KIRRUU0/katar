@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
 
 export default function FormKelolaTicker() {
   const [announcements, setAnnouncements] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(true)
   const [toast, setToast] = useState({ message: '', type: '' })
   
   const [newMessage, setNewMessage] = useState('')
@@ -12,7 +14,6 @@ export default function FormKelolaTicker() {
   const [editText, setEditText] = useState('')
 
   const fetchTickerData = useCallback(async () => {
-    setLoading(true)
     try {
       if (isSupabaseConfigured()) {
         const { data, error } = await supabase
@@ -22,33 +23,33 @@ export default function FormKelolaTicker() {
 
         if (!error && data) {
           setAnnouncements(data)
-          setLoading(false)
-          return
         }
-      }
-
-      // Local storage fallback
-      const localData = localStorage.getItem('katar_announcements')
-      if (localData) {
-        setAnnouncements(JSON.parse(localData))
       } else {
-        const defaultData = [
-          { id: '1', message: 'Pendaftaran Lomba 17 Agustus 2026 dibuka!', is_active: true, created_at: new Date(Date.now() - 3600000).toISOString() },
-          { id: '2', message: 'Lomba Futsal Antar Gang — segera daftar!', is_active: true, created_at: new Date(Date.now() - 7200000).toISOString() },
-          { id: '3', message: 'Rapat koordinasi panitia hari Minggu jam 19:00', is_active: true, created_at: new Date(Date.now() - 10800000).toISOString() },
-        ]
-        setAnnouncements(defaultData)
-        localStorage.setItem('katar_announcements', JSON.stringify(defaultData))
+        const localData = localStorage.getItem('katar_announcements')
+        if (localData) {
+          setAnnouncements(JSON.parse(localData))
+        } else {
+          const defaultData = [
+            { id: '1', message: 'Selamat Datang di Website Resmi Karang Taruna RT 02/03 Iremda!', is_active: true },
+            { id: '2', message: 'Rapat Anggota Rutin Bulan Agustus Akan Diadakan Hari Minggu Ini.', is_active: true }
+          ]
+          setAnnouncements(defaultData)
+          localStorage.setItem('katar_announcements', JSON.stringify(defaultData))
+        }
       }
     } catch (err) {
       console.warn('Failed to load announcements:', err)
+    } finally {
+      setLoading(false)
+      setFetching(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => {
-    fetchTickerData()
-  }, [fetchTickerData])
+    if (fetching) {
+      fetchTickerData()
+    }
+  }, [fetchTickerData, fetching])
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })

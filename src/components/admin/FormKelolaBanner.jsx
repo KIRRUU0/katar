@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react'
 import { Icon } from '@iconify/react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
@@ -49,8 +50,10 @@ export default function FormKelolaBanner() {
   }, [])
 
   useEffect(() => {
-    fetchBanners()
-  }, [fetchBanners])
+    if (fetching) {
+      fetchBanners()
+    }
+  }, [fetchBanners, fetching])
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type })

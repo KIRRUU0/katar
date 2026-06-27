@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Icon } from '@iconify/react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
@@ -25,10 +26,36 @@ export default function FormKelolaMedia({ onMediaAdded }) {
   const [toast, setToast] = useState({ message: '', type: '' })
 
   const [mediaList, setMediaList] = useState([])
-  const [fetchingList, setFetchingList] = useState(false)
+  const [fetchingList, setFetchingList] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 5
+
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
+  const filteredList = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return mediaList.filter(item => {
+      if (!query) return true
+      return (
+        item.title.toLowerCase().includes(query) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        (item.date && item.date.includes(query)) ||
+        (item.year && String(item.year).includes(query))
+      )
+    })
+  }, [mediaList, searchQuery])
+
+  // Adjust page state during render if out of bounds or search changed
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery)
+    setCurrentPage(1)
+  }
+
+  const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
+  const maxPage = totalPages
+  if (currentPage > maxPage && maxPage > 0) {
+    setCurrentPage(maxPage)
+  }
 
   // Edit states
   const [editingMedia, setEditingMedia] = useState(null)
@@ -143,7 +170,7 @@ export default function FormKelolaMedia({ onMediaAdded }) {
                 if (url) newsUrls.add(url.trim())
               })
             })
-          } catch (e) {
+          } catch {
             // ignore
           }
         }
@@ -205,29 +232,10 @@ export default function FormKelolaMedia({ onMediaAdded }) {
       console.warn('Failed to clean local storage:', e)
     }
 
-    fetchMedia()
-  }, [fetchMedia])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery])
-
-  useEffect(() => {
-    const query = searchQuery.trim().toLowerCase()
-    const filteredList = mediaList.filter(item => {
-      if (!query) return true
-      return (
-        item.title.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query)) ||
-        (item.date && item.date.includes(query)) ||
-        (item.year && String(item.year).includes(query))
-      )
-    })
-    const maxPage = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
-    if (currentPage > maxPage && maxPage > 0) {
-      setCurrentPage(maxPage)
+    if (fetchingList) {
+      fetchMedia()
     }
-  }, [mediaList, searchQuery, currentPage, ITEMS_PER_PAGE])
+  }, [fetchMedia, fetchingList])
 
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files)
@@ -451,8 +459,6 @@ export default function FormKelolaMedia({ onMediaAdded }) {
             onPaste={(e) => {
               const clipboardData = e.clipboardData || window.clipboardData
               const pastedText = clipboardData.getData('Text') || ''
-              const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
-              const matches = pastedText.match(urlRegex) || []
               const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
               const newUrls = []
               items.forEach(item => {
@@ -642,17 +648,6 @@ export default function FormKelolaMedia({ onMediaAdded }) {
             <span className="text-xs text-abu-400">Memuat data foto...</span>
           </div>
         ) : (() => {
-          const query = searchQuery.trim().toLowerCase()
-          const filteredList = mediaList.filter(item => {
-            if (!query) return true
-            return (
-              item.title.toLowerCase().includes(query) ||
-              (item.description && item.description.toLowerCase().includes(query)) ||
-              (item.date && item.date.includes(query)) ||
-              (item.year && String(item.year).includes(query))
-            )
-          })
-
           const formatDateLabel = (dateStr) => {
             if (!dateStr) return ''
             try {
@@ -887,8 +882,6 @@ export default function FormKelolaMedia({ onMediaAdded }) {
                   onPaste={(e) => {
                     const clipboardData = e.clipboardData || window.clipboardData
                     const pastedText = clipboardData.getData('Text') || ''
-                    const urlRegex = /(https?:\/\/[^\s,]+|drive\.google\.com[^\s,]*|lh3\.googleusercontent\.com[^\s,]*)/gi
-                    const matches = pastedText.match(urlRegex) || []
                     const items = pastedText.split(/[\s,\n]+/).map(item => item.trim()).filter(Boolean)
                     const newUrls = []
                     items.forEach(item => {
