@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import LazyImage from './LazyImage.jsx'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { parseImages } from './admin/adminUtils'
 
@@ -22,8 +22,6 @@ function MediaPreview() {
       let supabasePhotos = []
       if (isSupabaseConfigured()) {
         try {
-          const { getSupabase } = await import('../lib/supabase')
-          const supabase = await getSupabase()
           // Fetch news URLs for filtering
           const { data: newsData } = await supabase.from('news').select('image_url')
           newsData?.forEach(n => {

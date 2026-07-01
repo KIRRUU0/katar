@@ -13,7 +13,7 @@ const OrgPage = lazy(() => import('./pages/OrgPage'))
 const MediaPage = lazy(() => import('./pages/MediaPage'))
 // Analytics is loaded lazily to avoid blocking initial render
 const PopupBanner = lazy(() => import('./components/PopupBanner'))
-import { isSupabaseConfigured } from './lib/supabase'
+import { supabase, isSupabaseConfigured } from './lib/supabase'
 
 const BackToTopButton = memo(function BackToTopButton() {
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -167,8 +167,6 @@ export default function App() {
     if (!isSupabaseConfigured()) return
     const syncCategories = async () => {
       try {
-        const { getSupabase } = await import('./lib/supabase')
-        const supabase = await getSupabase()
         const { data, error } = await supabase
           .from('category_settings')
           .select('*')
