@@ -7,7 +7,7 @@ import Toast from './Toast'
 
 export default function FormKelolaBanner() {
   const [banners, setBanners] = useState([])
-  const [fetching, setFetching] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState({ message: '', type: '' })

@@ -7,7 +7,7 @@ import { getCustomCategories } from './adminUtils'
 
 export default function FormEditKategori({ onCategoriesUpdated }) {
   const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [syncStatus, setSyncStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
   const [toast, setToast] = useState({ message: '', type: '' })
   
