@@ -74,25 +74,12 @@ export default function NewsDetailPage() {
       setLoading(true)
       let found = null
 
-      const localData = localStorage.getItem('katar_news_articles')
-      let localNews = []
-
       // Check if parameter matches UUID format
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug || '')
 
       if (isUUID) {
-        // 1. Check local storage by ID
-        if (localData) {
-          try {
-            localNews = JSON.parse(localData)
-            found = localNews.find((item) => String(item.id) === String(slug))
-          } catch {
-            localNews = []
-          }
-        }
-
-        // 2. Check Supabase by ID
-        if (!found && isSupabaseConfigured()) {
+        // Check Supabase by ID
+        if (isSupabaseConfigured()) {
           try {
             const { data, error } = await supabase
               .from('news')
@@ -111,16 +98,7 @@ export default function NewsDetailPage() {
 
       // If not found by ID, or it is not a UUID, search by slug
       if (!found) {
-        if (localData && localNews.length === 0) {
-          try {
-            localNews = JSON.parse(localData)
-          } catch {
-            localNews = []
-          }
-        }
-        found = localNews.find((item) => generateSlug(item.title) === slug)
-
-        if (!found && isSupabaseConfigured()) {
+        if (isSupabaseConfigured()) {
           try {
             const { data, error } = await supabase
               .from('news')
@@ -152,7 +130,6 @@ export default function NewsDetailPage() {
 
       const targetId = found ? found.id : null
       const combinedOthers = [
-        ...localNews.filter((item) => String(item.id) !== String(targetId)),
         ...supabaseNews.filter((item) => String(item.id) !== String(targetId))
       ]
 

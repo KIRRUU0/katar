@@ -83,47 +83,8 @@ export default function MediaPage() {
         }
       }
 
-      // Check local storage for added photos
-      const localData = localStorage.getItem('katar_media_photos')
-      let localPhotos = []
-      if (localData) {
-        try {
-          localPhotos = JSON.parse(localData)
-        } catch {
-          localPhotos = []
-        }
-      }
-
-      // Also get local news entries to merge dynamically
-      let localNewsPhotos = []
-      const localNewsData = localStorage.getItem('katar_news_articles')
-      if (localNewsData) {
-        try {
-          const localNews = JSON.parse(localNewsData)
-          localNews.forEach(n => {
-            const urls = parseImages(n.image_url)
-            const year = n.date ? new Date(n.date).getFullYear() : new Date().getFullYear()
-            urls.forEach((url, idx) => {
-              if (url) {
-                localNewsPhotos.push({
-                  id: `news-sync-local-${n.id}-${idx}`,
-                  title: n.title,
-                  year: year,
-                  date: n.date,
-                  image_url: JSON.stringify([url]),
-                  description: n.description || '',
-                  is_news_sync: true
-                })
-              }
-            })
-          })
-        } catch {
-          // ignore
-        }
-      }
-
       // Merge media entries and news virtual entries
-      const allEntries = [...localPhotos, ...localNewsPhotos, ...supabasePhotos, ...supabaseNewsPhotos].filter((entry) => {
+      const allEntries = [...supabasePhotos, ...supabaseNewsPhotos].filter((entry) => {
         const entryUrl = (entry.image_url || '').trim()
         return !!entryUrl
       })

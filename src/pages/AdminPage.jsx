@@ -19,66 +19,58 @@ import FormEditKategori from '../components/admin/FormEditKategori'
 
 import { DEMO_TOURNAMENTS, syncAllExistingNewsImages } from '../components/admin/adminUtils'
 
-const calculateVisitorStats = (visits) => {
-  if (!visits || !Array.isArray(visits)) {
-    return { weekly: 0, monthly: 0, yearly: 0, trends: [] }
-  }
+const viewsToDailyVisits = (visits) => {
+  if (!visits || !Array.isArray(visits)) return []
+  const groups = {}
+  visits.forEach(v => {
+    try {
+      const d = new Date(v.created_at || v.date)
+      const dateStr = d.toISOString().split('T')[0]
+      if (!groups[dateStr]) {
+        groups[dateStr] = { visit_date: dateStr, unique_visitors: new Set(), total_views: 0 }
+      }
+      groups[dateStr].unique_visitors.add(v.visitor_id)
+      groups[dateStr].total_views += 1
+    } catch { /* ignore */ }
+  })
+  return Object.values(groups).map(g => ({
+    visit_date: g.visit_date,
+    unique_visitors: g.unique_visitors.size,
+    total_views: g.total_views
+  })).sort((a, b) => a.visit_date.localeCompare(b.visit_date))
+}
+
+const calculateVisitorStats = (visits, dailyAnalytics) => {
   const now = new Date()
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  const threeSixtyFiveDaysAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
 
-  // 1. Weekly unique visitors
-  const weeklyVisitors = new Set(
+  // 1. Weekly unique visitors (from raw 30-day visits)
+  const weekly = !visits || !Array.isArray(visits) ? 0 : new Set(
     visits
       .filter(v => new Date(v.created_at || v.date) >= sevenDaysAgo)
       .map(v => v.visitor_id)
   ).size
 
-  // 2. Monthly unique visitors
-  const monthlyVisitors = new Set(
+  // 2. Monthly unique visitors (from raw 30-day visits)
+  const monthly = !visits || !Array.isArray(visits) ? 0 : new Set(
     visits
       .filter(v => new Date(v.created_at || v.date) >= thirtyDaysAgo)
       .map(v => v.visitor_id)
   ).size
 
-  // 3. Yearly unique visitors
-  const yearlyVisitors = new Set(
-    visits
-      .filter(v => new Date(v.created_at || v.date) >= threeSixtyFiveDaysAgo)
-      .map(v => v.visitor_id)
-  ).size
-
-  // 4. Monthly trends (last 6 months)
-  const monthlyTrends = []
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date()
-    d.setMonth(d.getMonth() - i)
-    const monthIndex = d.getMonth()
-    const year = d.getFullYear()
-
-    const monthStart = new Date(year, monthIndex, 1)
-    const monthEnd = new Date(year, monthIndex + 1, 0, 23, 59, 59)
-
-    const uniqueInMonth = new Set(
-      visits
-        .filter(v => {
-          const vd = new Date(v.created_at || v.date)
-          return vd >= monthStart && vd <= monthEnd
-        })
-        .map(v => v.visitor_id)
-    ).size
-
-    const monthName = d.toLocaleString('id-ID', { month: 'short' })
-    monthlyTrends.push({ label: `${monthName} ${year}`, count: uniqueInMonth })
+  // 3. Yearly unique visitors: sum of daily unique_visitors in dailyAnalytics for the last 365 days
+  let yearly = 0
+  if (dailyAnalytics && Array.isArray(dailyAnalytics)) {
+    const oneYearAgo = new Date()
+    oneYearAgo.setDate(oneYearAgo.getDate() - 365)
+    
+    yearly = dailyAnalytics
+      .filter(d => new Date(d.visit_date) >= oneYearAgo)
+      .reduce((sum, d) => sum + (d.unique_visitors || 0), 0)
   }
 
-  return {
-    weekly: weeklyVisitors,
-    monthly: monthlyVisitors,
-    yearly: yearlyVisitors,
-    trends: monthlyTrends
-  }
+  return { weekly, monthly, yearly }
 }
 
 const seedDemoParticipantData = () => {
@@ -317,8 +309,8 @@ const calculateParticipantAnalytics = (participants, teams, registrations, tourn
   }
 }
 
-const calculateVisitorTrends = (visits, interval) => {
-  if (!visits || !Array.isArray(visits)) return []
+const calculateVisitorTrends = (dailyVisits, interval) => {
+  if (!dailyVisits || !Array.isArray(dailyVisits)) return []
 
   const trends = []
   const now = new Date()
@@ -328,20 +320,11 @@ const calculateVisitorTrends = (visits, interval) => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date()
       d.setDate(now.getDate() - i)
-      const start = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0)
-      const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59)
-
-      const uniqueCount = new Set(
-        visits
-          .filter(v => {
-            const vd = new Date(v.created_at || v.date)
-            return vd >= start && vd <= end
-          })
-          .map(v => v.visitor_id)
-      ).size
-
+      const dateStr = d.toISOString().split('T')[0]
+      const dayData = dailyVisits.find(v => v.visit_date === dateStr)
+      const count = dayData ? dayData.unique_visitors : 0
       const label = d.toLocaleString('id-ID', { day: 'numeric', month: 'short' })
-      trends.push({ label, count: uniqueCount })
+      trends.push({ label, count })
     }
   } else if (interval === 'weekly') {
     // Last 8 weeks
@@ -355,16 +338,14 @@ const calculateVisitorTrends = (visits, interval) => {
       endOfWeek.setDate(startOfWeek.getDate() + 6)
       endOfWeek.setHours(23, 59, 59, 999)
 
-      const uniqueCount = new Set(
-        visits
-          .filter(v => {
-            const vd = new Date(v.created_at || v.date)
-            return vd >= startOfWeek && vd <= endOfWeek
-          })
-          .map(v => v.visitor_id)
-      ).size
+      const count = dailyVisits
+        .filter(v => {
+          const vd = new Date(v.visit_date)
+          return vd >= startOfWeek && vd <= endOfWeek
+        })
+        .reduce((sum, v) => sum + (v.unique_visitors || 0), 0)
 
-      trends.push({ label: `Min ${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1}`, count: uniqueCount })
+      trends.push({ label: `Min ${startOfWeek.getDate()}/${startOfWeek.getMonth() + 1}`, count })
     }
   } else if (interval === 'monthly') {
     // Last 6 months
@@ -377,17 +358,15 @@ const calculateVisitorTrends = (visits, interval) => {
       const monthStart = new Date(year, monthIndex, 1)
       const monthEnd = new Date(year, monthIndex + 1, 0, 23, 59, 59)
 
-      const uniqueInMonth = new Set(
-        visits
-          .filter(v => {
-            const vd = new Date(v.created_at || v.date)
-            return vd >= monthStart && vd <= monthEnd
-          })
-          .map(v => v.visitor_id)
-      ).size
+      const count = dailyVisits
+        .filter(v => {
+          const vd = new Date(v.visit_date)
+          return vd >= monthStart && vd <= monthEnd
+        })
+        .reduce((sum, v) => sum + (v.unique_visitors || 0), 0)
 
       const monthName = d.toLocaleString('id-ID', { month: 'short' })
-      trends.push({ label: `${monthName} ${year}`, count: uniqueInMonth })
+      trends.push({ label: `${monthName} ${year}`, count })
     }
   } else if (interval === 'yearly') {
     // Last 5 years
@@ -397,28 +376,22 @@ const calculateVisitorTrends = (visits, interval) => {
       const yearStart = new Date(targetYear, 0, 1)
       const yearEnd = new Date(targetYear, 11, 31, 23, 59, 59)
 
-      const uniqueInYear = new Set(
-        visits
-          .filter(v => {
-            const vd = new Date(v.created_at || v.date)
-            return vd >= yearStart && vd <= yearEnd
-          })
-          .map(v => v.visitor_id)
-      ).size
+      const count = dailyVisits
+        .filter(v => {
+          const vd = new Date(v.visit_date)
+          return vd >= yearStart && vd <= yearEnd
+        })
+        .reduce((sum, v) => sum + (v.unique_visitors || 0), 0)
 
-      trends.push({ label: `${targetYear}`, count: uniqueInYear })
+      trends.push({ label: `${targetYear}`, count })
     }
   } else if (interval === 'alltime') {
     // Group all historical visits by month
-    if (visits.length === 0) return []
+    if (dailyVisits.length === 0) return []
 
-    const sortedVisits = [...visits].sort((a, b) => {
-      return new Date(a.created_at || a.date) - new Date(b.created_at || b.date)
-    })
-
-    const earliestVisitDate = new Date(sortedVisits[0].created_at || sortedVisits[0].date)
+    const earliestDate = new Date(dailyVisits[0].visit_date)
     
-    let current = new Date(earliestVisitDate.getFullYear(), earliestVisitDate.getMonth(), 1)
+    let current = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1)
     while (current <= now) {
       const monthIndex = current.getMonth()
       const year = current.getFullYear()
@@ -426,17 +399,15 @@ const calculateVisitorTrends = (visits, interval) => {
       const monthStart = new Date(year, monthIndex, 1)
       const monthEnd = new Date(year, monthIndex + 1, 0, 23, 59, 59)
 
-      const uniqueInMonth = new Set(
-        visits
-          .filter(v => {
-            const vd = new Date(v.created_at || v.date)
-            return vd >= monthStart && vd <= monthEnd
-          })
-          .map(v => v.visitor_id)
-      ).size
+      const count = dailyVisits
+        .filter(v => {
+          const vd = new Date(v.visit_date)
+          return vd >= monthStart && vd <= monthEnd
+        })
+        .reduce((sum, v) => sum + (v.unique_visitors || 0), 0)
 
       const monthName = current.toLocaleString('id-ID', { month: 'short' })
-      trends.push({ label: `${monthName} ${year}`, count: uniqueInMonth })
+      trends.push({ label: `${monthName} ${year}`, count })
 
       current.setMonth(current.getMonth() + 1)
     }
@@ -481,8 +452,9 @@ export default function AdminPage() {
     totalNewsCount: 0,
     totalMediaCount: 0,
     activeTournamentsList: [],
-    visitorStats: { weekly: 0, monthly: 0, yearly: 0, trends: [] },
+    visitorStats: { weekly: 0, monthly: 0, yearly: 0 },
     rawVisits: [],
+    dailyVisits: [],
     participantAnalytics: { popularTournaments: [], yearlyDistribution: [] }
   })
   const [fetchingData, setFetchingData] = useState(true)
@@ -526,8 +498,6 @@ export default function AdminPage() {
    */
   const fetchDashboardStats = useCallback(async () => {
     try {
-      let views = []
-
       if (isSupabaseConfigured()) {
         // 1. Tournaments
         const { data: tourneys, error: tErr } = await supabase
@@ -560,21 +530,35 @@ export default function AdminPage() {
           .select('*', { count: 'exact', head: true })
         if (mErr) throw mErr
 
-        // 5. Page views
+        // 5. Page views (last 30 days)
+        let rawViews = []
         try {
-          const oneYearAgo = new Date()
-          oneYearAgo.setDate(oneYearAgo.getDate() - 365)
+          const thirtyDaysAgo = new Date()
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
           const { data: vData, error: vErr } = await supabase
             .from('page_views')
             .select('visitor_id, created_at')
-            .gte('created_at', oneYearAgo.toISOString())
+            .gte('created_at', thirtyDaysAgo.toISOString())
           if (!vErr && vData) {
-            views = vData
+            rawViews = vData
           }
         } catch (vErr) {
           console.warn('Failed to fetch page views:', vErr)
         }
 
+        // 6. Daily analytics (all time)
+        let dailyVisits = []
+        try {
+          const { data: dData, error: dErr } = await supabase
+            .from('daily_analytics')
+            .select('visit_date, unique_visitors, total_views')
+            .order('visit_date', { ascending: true })
+          if (!dErr && dData) {
+            dailyVisits = dData
+          }
+        } catch (dErr) {
+          console.warn('Failed to fetch daily analytics:', dErr)
+        }
 
         // Fetch rows for participant analytics
         let allParticipants = []
@@ -600,8 +584,9 @@ export default function AdminPage() {
           totalNewsCount: newsCount || 0,
           totalMediaCount: mediaCount || 0,
           activeTournamentsList: activeT.slice(0, 3),
-          visitorStats: calculateVisitorStats(views),
-          rawVisits: views,
+          visitorStats: calculateVisitorStats(rawViews, dailyVisits),
+          rawVisits: rawViews,
+          dailyVisits: dailyVisits,
           participantAnalytics: calculateParticipantAnalytics(allParticipants, allTeams, allRegistrations, mappedTourneys)
         })
       } else {
@@ -621,6 +606,7 @@ export default function AdminPage() {
         const allMediaCount = localMedia.length || 6
 
         // Load local visits
+        let views = []
         const localData = localStorage.getItem('katar_local_visits')
         if (localData) {
           try {
@@ -634,14 +620,16 @@ export default function AdminPage() {
         const localTeams = JSON.parse(localStorage.getItem('katar_teams') || '[]')
         const localRegs = JSON.parse(localStorage.getItem('katar_registrations') || '[]')
 
+        const demoDailyVisits = viewsToDailyVisits(views)
         setStats({
           activeTournamentsCount: activeT.length,
           totalParticipantsCount: localParts.length + localTeams.length,
           totalNewsCount: allNewsCount,
           totalMediaCount: allMediaCount,
           activeTournamentsList: activeT.slice(0, 3),
-          visitorStats: calculateVisitorStats(views),
+          visitorStats: calculateVisitorStats(views, demoDailyVisits),
           rawVisits: views,
+          dailyVisits: demoDailyVisits,
           participantAnalytics: calculateParticipantAnalytics(localParts, localTeams, localRegs, localTourneys)
         })
       }
@@ -774,7 +762,7 @@ export default function AdminPage() {
       {/* Tab Panels */}
       <div className="space-y-6">
         {activeTab === 'overview' && (() => {
-          const trends = calculateVisitorTrends(stats.rawVisits || [], visitorTrendInterval)
+          const trends = calculateVisitorTrends(stats.dailyVisits || [], visitorTrendInterval)
           const maxVal = Math.max(...trends.map(t => t.count), 1)
           // unused analytics variables removed
 

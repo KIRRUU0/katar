@@ -140,11 +140,26 @@ export default function App() {
   const location = useLocation()
   const isHome = location.pathname === '/'
 
-  // Record page view on mount (once per session)
+  // Record page view on mount (once per session) and clean legacy demo localStorage
   useEffect(() => {
     import('./lib/analytics').then(({ recordPageView }) => {
       try { recordPageView() } catch { /* ignore */ }
     }).catch(() => {})
+
+    try {
+      const keys = [
+        'katar_news_articles',
+        'katar_media_photos',
+        'katar_announcements',
+        'katar_organization',
+        'katar_tournaments',
+        'katar_participants',
+        'katar_teams',
+        'katar_registrations',
+        'katar_popup_banners'
+      ]
+      keys.forEach(k => localStorage.removeItem(k))
+    } catch { /* ignore */ }
   }, [])
 
   // Sync custom category settings from Supabase on mount

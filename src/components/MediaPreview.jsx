@@ -45,33 +45,8 @@ function MediaPreview() {
         }
       }
 
-      // Also collect local news URLs for filtering
-      const localNewsData = localStorage.getItem('katar_news_articles')
-      if (localNewsData) {
-        try {
-          const localNews = JSON.parse(localNewsData)
-          localNews.forEach(n => {
-            parseImages(n.image_url).forEach(url => {
-              if (url) newsUrls.add(url.trim())
-            })
-          })
-        } catch {
-          // ignore
-        }
-      }
-
-      const localData = localStorage.getItem('katar_media_photos')
-      let localPhotos = []
-      if (localData) {
-        try {
-          localPhotos = JSON.parse(localData)
-        } catch {
-          localPhotos = []
-        }
-      }
-
-      // Merge, filter out news images, and deduplicate
-      const allEntries = [...localPhotos, ...supabasePhotos].filter((entry) => {
+      // Filter out news images, and deduplicate
+      const allEntries = [...supabasePhotos].filter((entry) => {
         const entryUrl = (entry.image_url || '').trim()
         if (!entryUrl) return false
         // Exclude entries whose images all belong to news

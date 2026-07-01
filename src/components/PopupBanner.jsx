@@ -24,37 +24,10 @@ function PopupBanner() {
             .order('created_at', { ascending: false })
             .limit(1)
 
-          if (!error) {
-            if (data && data.length > 0) {
-              setBanner(data[0])
-              setIsOpen(true)
-            }
-            return
+          if (!error && data && data.length > 0) {
+            setBanner(data[0])
+            setIsOpen(true)
           }
-        }
-
-        // Local storage fallback (when Supabase is down or in demo mode)
-        let localData = localStorage.getItem('katar_popup_banners')
-        if (!localData) {
-          const mockBanners = [
-            {
-              id: 'mock-banner-1',
-              image_url: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200',
-              ratio: 'horizontal',
-              link_url: '/league',
-              is_active: true,
-              created_at: new Date().toISOString()
-            }
-          ]
-          localStorage.setItem('katar_popup_banners', JSON.stringify(mockBanners))
-          localData = JSON.stringify(mockBanners)
-        }
-
-        const parsed = JSON.parse(localData)
-        const activeLocal = parsed.find(b => b.is_active === true)
-        if (activeLocal) {
-          setBanner(activeLocal)
-          setIsOpen(true)
         }
       } catch (err) {
         console.warn('Failed to fetch active popup banner:', err)

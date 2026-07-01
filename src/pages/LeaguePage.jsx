@@ -370,22 +370,8 @@ function RegistrationModal({ tournament, onClose, onRegisterSuccess }) {
         setSubmitting(false)
       }
     } else {
-      // Local fallback
-      try {
-        const localRegs = JSON.parse(localStorage.getItem('katar_registrations') || '[]')
-        const regWithId = {
-          ...registrationData,
-          id: 'reg-' + Date.now(),
-          tournament_name: tournament.name,
-          created_at: new Date().toISOString()
-        }
-        localRegs.push(regWithId)
-        localStorage.setItem('katar_registrations', JSON.stringify(localRegs))
-        onRegisterSuccess('(Demo) Pendaftaran berhasil disimpan secara lokal!')
-      } catch {
-        setErrorMsg('Gagal menyimpan pendaftaran lokal.')
-        setSubmitting(false)
-      }
+      setErrorMsg('Pendaftaran gagal dikirim karena sistem database tidak terkonfigurasi.')
+      setSubmitting(false)
     }
   }
 

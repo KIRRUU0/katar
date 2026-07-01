@@ -36,20 +36,8 @@ export default function NewsListPage() {
         }
       }
 
-      // Merge with local storage news
-      const localData = localStorage.getItem('katar_news_articles')
-      let localNews = []
-      if (localData) {
-        try {
-          localNews = JSON.parse(localData)
-        } catch {
-          localNews = []
-        }
-      }
-
-      const combined = [...localNews, ...supabaseNews]
-      
       // Sort news by date/created_at descending (newest first)
+      const combined = [...supabaseNews]
       combined.sort((a, b) => {
         const dateA = new Date(a.date || a.created_at || 0)
         const dateB = new Date(b.date || b.created_at || 0)

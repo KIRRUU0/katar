@@ -112,17 +112,6 @@ export default function OrgPage() {
           }
         }
         
-        if (rows.length === 0) {
-          // Local fallback
-          const localOrg = localStorage.getItem('katar_organization')
-          if (localOrg) {
-            const parsed = JSON.parse(localOrg)
-            if (parsed && parsed.length > 0) {
-              rows = parsed
-            }
-          }
-        }
-
         if (rows.length > 0) {
           const yearVal = rows[0]?.year || 2026
           setActiveYear(yearVal)

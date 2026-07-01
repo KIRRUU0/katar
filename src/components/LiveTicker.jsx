@@ -12,23 +12,7 @@ import { Icon } from '@iconify/react'
  * - Red background, white text, horizontal CSS ticker animation
  */
 function LiveTicker() {
-  const [announcements, setAnnouncements] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const localData = localStorage.getItem('katar_announcements')
-      if (localData) {
-        try {
-          const parsed = JSON.parse(localData)
-          const activeMsgs = parsed.filter(t => t.is_active).map(t => t.message)
-          if (activeMsgs.length > 0) {
-            return activeMsgs
-          }
-        } catch {
-          // ignore parsing error
-        }
-      }
-    }
-    return []
-  })
+  const [announcements, setAnnouncements] = useState([])
 
   const [isPopupOpen, setIsPopupOpen] = useState(() => {
     try {
