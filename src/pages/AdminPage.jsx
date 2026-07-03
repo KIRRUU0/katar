@@ -741,7 +741,7 @@ export default function AdminPage() {
           { id: 'participants', label: 'Input Peserta', icon: 'solar:user-plus-bold-duotone' },
           { id: 'news-media', label: 'Berita & Media', icon: 'solar:gallery-bold-duotone' },
           { id: 'organization', label: 'Kelola Organisasi', icon: 'solar:users-group-rounded-bold-duotone' },
-          { id: 'announcements', label: 'Ticker Pengumuman', icon: 'solar:bullhorn-bold-duotone' },
+          { id: 'announcements', label: 'Ticker & Banner', icon: 'solar:bullhorn-bold-duotone' },
         ].map((tab) => (
           <button
             key={tab.id}
