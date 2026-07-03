@@ -612,30 +612,6 @@ export default function FormKelolaMedia({ onMediaAdded }) {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div>
             <h3 className="font-heading text-lg font-bold text-abu-900">Daftar Foto Galeri</h3>
-            <p className="text-xs text-abu-400 mt-0.5">Mengelola dokumentasi foto yang diunggah langsung ke galeri.</p>
-          </div>
-          
-          {/* Search Input */}
-          <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Icon icon="solar:magnifer-linear" className="w-4 h-4 text-abu-400" />
-            </span>
-            <input
-              type="text"
-              placeholder="Cari foto galeri..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input pl-9 pr-8 py-1.5 focus-ring text-xs min-h-[36px]"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-abu-400 hover:text-abu-600 transition-colors"
-              >
-                <Icon icon="solar:close-circle-bold" className="w-4 h-4" />
-              </button>
-            )}
           </div>
         </div>
 
