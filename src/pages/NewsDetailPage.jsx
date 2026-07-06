@@ -229,7 +229,7 @@ export default function NewsDetailPage() {
       {/* Main Layout */}
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
         {/* Left Column: Article Details */}
-        <article className="lg:w-2/3">
+        <article className="lg:w-2/3 min-w-0">
           {/* Article Banner Image */}
           <div className="relative h-64 sm:h-96 w-full rounded-2xl overflow-hidden shadow-md mb-6 md:mb-8">
             <img
@@ -259,7 +259,7 @@ export default function NewsDetailPage() {
 
           {/* Description */}
           <div 
-            className="text-abu-600 text-sm sm:text-base leading-relaxed md:text-lg text-justify prose prose-sm max-w-none"
+            className="text-abu-600 text-sm sm:text-base leading-relaxed md:text-lg text-justify prose prose-sm max-w-none break-words"
             dangerouslySetInnerHTML={{ __html: article.description }}
           />
 

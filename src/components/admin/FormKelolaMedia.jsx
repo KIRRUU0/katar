@@ -27,29 +27,13 @@ export default function FormKelolaMedia({ onMediaAdded }) {
 
   const [mediaList, setMediaList] = useState([])
   const [fetchingList, setFetchingList] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchQuery = ''
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 5
 
-  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery)
   const filteredList = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    return mediaList.filter(item => {
-      if (!query) return true
-      return (
-        item.title.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query)) ||
-        (item.date && item.date.includes(query)) ||
-        (item.year && String(item.year).includes(query))
-      )
-    })
-  }, [mediaList, searchQuery])
-
-  // Adjust page state during render if out of bounds or search changed
-  if (searchQuery !== prevSearchQuery) {
-    setPrevSearchQuery(searchQuery)
-    setCurrentPage(1)
-  }
+    return mediaList
+  }, [mediaList])
 
   const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE)
   const maxPage = totalPages
