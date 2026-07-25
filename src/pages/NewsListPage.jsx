@@ -4,12 +4,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { generateSlug } from '../lib/slug'
 import { parseImages } from '../components/admin/adminUtils'
-import { formatDate } from '../lib/formatUtils'
-
-const stripHtml = (html) => {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, '')
-}
+import { formatDate, stripHtml } from '../lib/formatUtils'
 
 export default function NewsListPage() {
   const [news, setNews] = useState([])

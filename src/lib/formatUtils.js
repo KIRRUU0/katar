@@ -13,3 +13,19 @@ export const formatDate = (dateStr) => {
     return ''
   }
 }
+
+/**
+ * Strips HTML tags and decodes common HTML entities (like &nbsp;) to plain text
+ */
+export const stripHtml = (html) => {
+  if (!html) return ''
+  return html
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/&nbsp;/gi, ' ') // Replace non-breaking spaces with normal spaces
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .trim()
+}

@@ -8,10 +8,7 @@ import Toast from './Toast'
 import ImageEditorModal from './ImageEditorModal'
 import { uploadImage, parseImages } from './adminUtils'
 
-const stripHtml = (html) => {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, '')
-}
+import { stripHtml } from '../../lib/formatUtils'
 
 export default function FormKelolaMedia({ onMediaAdded }) {
   const [form, setForm] = useState({

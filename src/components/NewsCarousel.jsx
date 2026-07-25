@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { Icon } from '@iconify/react'
 import { generateSlug } from '../lib/slug'
 import { parseImages } from './admin/adminUtils'
-import { formatDate } from '../lib/formatUtils'
+import { formatDate, stripHtml } from '../lib/formatUtils'
 
 /**
  * NewsCarousel — Horizontal swipeable news/gallery section
@@ -156,7 +156,7 @@ function NewsCarousel() {
                   {item.title}
                 </h3>
                 <p className="text-sm text-abu-600 leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]">
-                  {item.description}
+                  {stripHtml(item.description)}
                 </p>
                 {(item.date || item.created_at) && (
                   <time
