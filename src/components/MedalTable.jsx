@@ -66,7 +66,11 @@ export default function MedalTable() {
   }, [])
 
   // ─── Fetch medal data when year/category changes ──────────────
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
   useEffect(() => {
+    setCurrentPage(1)
     if (selectedYear === null) {
       setMedals(prev => prev.length > 0 ? [] : prev)
       setLoading(prev => prev ? false : prev)
@@ -195,6 +199,7 @@ export default function MedalTable() {
         </p>
       ) : (
         /* Medal table — scrolls horizontally on small screens */
+        <>
         <div className="overflow-x-auto -mx-5 md:-mx-8 px-5 md:px-8" ref={tableRef} style={{ opacity: 0 }}>
           <table className="w-full min-w-[420px] text-sm md:text-base">
             <thead>
@@ -214,9 +219,10 @@ export default function MedalTable() {
               </tr>
             </thead>
             <tbody>
-              {medals.map((row, index) => {
+              {medals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((row, index) => {
                 const total = row.gold + row.silver + row.bronze
-                const isJuaraUmum = index === 0
+                const actualIndex = (currentPage - 1) * itemsPerPage + index
+                const isJuaraUmum = actualIndex === 0
 
                 return (
                   <tr
@@ -227,7 +233,7 @@ export default function MedalTable() {
                   >
                     {/* Rank number */}
                     <td className="py-3 pr-2 text-center font-bold text-abu-500">
-                      {index + 1}
+                      {actualIndex + 1}
                     </td>
 
                     {/* Participant/Team name — trophy for Juara Umum */}
@@ -257,6 +263,34 @@ export default function MedalTable() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {medals.length > itemsPerPage && (
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-6 px-2 gap-4">
+            <span className="text-sm text-abu-500 font-medium">
+              Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, medals.length)} dari {medals.length}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="btn btn-secondary py-2 px-4 text-xs focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                <Icon icon="solar:alt-arrow-left-bold" className="w-4 h-4" />
+                Prev
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(medals.length / itemsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil(medals.length / itemsPerPage)}
+                className="btn btn-secondary py-2 px-4 text-xs focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                Next
+                <Icon icon="solar:alt-arrow-right-bold" className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </div>
   )

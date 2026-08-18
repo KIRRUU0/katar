@@ -110,10 +110,10 @@ function CountdownTimer() {
         <div className="text-center py-8 flex flex-col items-center justify-center gap-3">
           <Icon icon="solar:confetti-bold-duotone" className="w-12 h-12 text-merah-600 animate-bounce" />
           <p className="text-3xl md:text-4xl font-bold font-heading text-merah-600 animate-pulse">
-            Perlombaan 17 agustus Sudah dimulai
+            Terima Kasih Atas Partisipasinya!
           </p>
-          <p className="text-base md:text-lg text-abu-600 font-medium mt-2">
-            Harap lakukan pendaftaran kepada penanggung jawab lomba untuk melakukan pendaftaran lomba
+          <p className="text-base md:text-lg text-abu-600 font-medium mt-2 max-w-lg text-center">
+            Terima kasih telah mengikuti seluruh rangkaian acara peringatan 17 Agustus yang telah sukses diselenggarakan pada tahun ini.
           </p>
         </div>
       ) : (
